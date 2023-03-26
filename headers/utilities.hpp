@@ -47,7 +47,6 @@ GLuint loadtextures(const char *filename, float width, float height)
     file = fopen(filename, "rb");
     if (file == NULL)
         return 0;
-
     data = (unsigned char *)malloc(width * height * 3);
     fread(data, width * height * 3, 1, file);
 
@@ -67,7 +66,7 @@ GLuint loadtextures(const char *filename, float width, float height)
                     GL_CLAMP);
     gluBuild2DMipmaps(GL_TEXTURE_2D, 3, width, height,
                       GL_RGB, GL_UNSIGNED_BYTE, data);
-    // glBindTexture(GL_TEXTURE_2D, 0);
+    glBindTexture(GL_TEXTURE_2D, 0);
     free(data);
     data = NULL;
 
@@ -82,8 +81,10 @@ void freetexture (GLuint texture) {
 void drawCube(GLfloat x,GLfloat y,GLfloat z,GLfloat size=1.0f){
 
     glTranslatef(x,y,z);
-    glScalef(size,size,size);
+    glScalef(size/2,size/2,size/2);
+                float white[]={1,1,1,1};
     glBegin(GL_QUADS);
+
     for(int i=0;i<6;i++){
         glNormal3fv(&cube::normals[i][0]);
         glTexCoord2fv(&cube::texcoords[0][0]);
@@ -96,4 +97,79 @@ void drawCube(GLfloat x,GLfloat y,GLfloat z,GLfloat size=1.0f){
         glVertex3fv(&cube::vertices[(int)cube::faces[i][3]][0]);
     }
     glEnd();
+}
+
+GLuint loadBMPTexture(const char *filename)
+{
+    GLuint texture;
+
+    FILE *file;
+    unsigned char header[54];
+    unsigned int dataPos;
+    unsigned int imageSize;
+    unsigned char *data;
+
+    // Open the file
+    file = fopen(filename, "rb");
+    if (!file)
+    {
+        printf("Error: could not open BMP file %s\n", filename);
+        return 0;
+    }
+
+    // Read the header
+    if (fread(header, 1, 54, file) != 54)
+    {
+        printf("Error: invalid BMP file %s\n", filename);
+        fclose(file);
+        return 0;
+    }
+
+    // Check the header
+    if (header[0] != 'B' || header[1] != 'M')
+    {
+        printf("Error: invalid BMP file %s\n", filename);
+        fclose(file);
+        return 0;
+    }
+
+    // Read the data position and image size
+    dataPos = *(int*)&(header[0x0A]);
+    imageSize = *(int*)&(header[0x22]);
+    if (imageSize == 0) imageSize = *(int*)&(header[0x02]) - dataPos;
+
+    // Allocate memory for the image data
+    data = (unsigned char*)malloc(imageSize);
+
+    // Read the image data
+    fseek(file, dataPos, SEEK_SET);
+    if (fread(data, 1, imageSize, file) != imageSize)
+    {
+        printf("Error: invalid BMP file %s\n", filename);
+        fclose(file);
+        free(data);
+        return 0;
+    }
+
+    // Close the file
+    fclose(file);
+
+    // Create OpenGL texture
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE,
+              GL_MODULATE);
+    // glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, header[18], header[22], 0, 0x80E0, GL_UNSIGNED_BYTE, data);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,
+                    GL_CLAMP);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,
+                    GL_CLAMP);
+    gluBuild2DMipmaps(GL_TEXTURE_2D, 3, header[18], header[22], 0x80E0, GL_UNSIGNED_BYTE, data);
+
+    // Free the image data
+    free(data);
+
+    return texture;
 }
