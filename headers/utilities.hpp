@@ -1,38 +1,39 @@
-#include<GLUT/glut.h>
-#include<iostream>
+#include <GLUT/glut.h>
+#include <iostream>
 
-namespace cube{
-            GLfloat vertices[8][3]={
-        {-1.0,-1.0,1.0},
-        {1.0,-1.0,1.0},
-        {1.0,1.0,1.0},
-        {-1.0,1.0,1.0},
-        {-1.0,-1.0,-1.0},
-        {1.0,-1.0,-1.0},
-        {1.0,1.0,-1.0},
-        {-1.0,1.0,-1.0},
+namespace cube
+{
+    GLfloat vertices[8][3] = {
+        {-1.0, -1.0, 1.0},
+        {1.0, -1.0, 1.0},
+        {1.0, 1.0, 1.0},
+        {-1.0, 1.0, 1.0},
+        {-1.0, -1.0, -1.0},
+        {1.0, -1.0, -1.0},
+        {1.0, 1.0, -1.0},
+        {-1.0, 1.0, -1.0},
     };
-    GLfloat normals[6][3]={
-        {0.0,0.0,1.0},//front
-        {0.0,0.0,-1.0},//back
-        {1.0,0.0,0.0},//right
-        {-1.0,0.0,0.0},//left
-        {0.0,1.0,0.0},//top
-        {0.0,-1.0,0.0},//bottom
+    GLfloat normals[6][3] = {
+        {0.0, 0.0, 1.0},  // front
+        {0.0, 0.0, -1.0}, // back
+        {1.0, 0.0, 0.0},  // right
+        {-1.0, 0.0, 0.0}, // left
+        {0.0, 1.0, 0.0},  // top
+        {0.0, -1.0, 0.0}, // bottom
     };
-    GLfloat texcoords[4][2]={
-        {0.0,0.0},
-        {1.0,0.0},
-        {1.0,1.0},
-        {0.0,1.0},
+    GLfloat texcoords[4][2] = {
+        {0.0, 0.0},
+        {1.0, 0.0},
+        {1.0, 1.0},
+        {0.0, 1.0},
     };
-    GLfloat faces[6][4]={
-        {0,1,2,3},//front
-        {5,4,7,6},//back
-        {1,5,6,2},//right
-        {4,0,3,7},//left
-        {3,2,6,7},//top
-        {4,5,1,0},//bottom
+    GLfloat faces[6][4] = {
+        {0, 1, 2, 3}, // front
+        {5, 4, 7, 6}, // back
+        {1, 5, 6, 2}, // right
+        {4, 0, 3, 7}, // left
+        {3, 2, 6, 7}, // top
+        {4, 5, 1, 0}, // bottom
     };
 
 }
@@ -73,19 +74,21 @@ GLuint loadtextures(const char *filename, float width, float height)
     return texture;
 }
 
-
-void freetexture (GLuint texture) {
-    glDeleteTextures( 1, &texture );
+void freetexture(GLuint texture)
+{
+    glDeleteTextures(1, &texture);
 }
 
-void drawCube(GLfloat x,GLfloat y,GLfloat z,GLfloat size=1.0f){
+void drawCube(GLfloat x, GLfloat y, GLfloat z, GLfloat size = 1.0f)
+{
 
-    glTranslatef(x,y,z);
-    glScalef(size/2,size/2,size/2);
-                float white[]={1,1,1,1};
+    glTranslatef(x, y, z);
+    glScalef(size / 2, size / 2, size / 2);
+    float white[] = {1, 1, 1, 1};
     glBegin(GL_QUADS);
 
-    for(int i=0;i<6;i++){
+    for (int i = 0; i < 6; i++)
+    {
         glNormal3fv(&cube::normals[i][0]);
         glTexCoord2fv(&cube::texcoords[0][0]);
         glVertex3fv(&cube::vertices[(int)cube::faces[i][0]][0]);
@@ -134,12 +137,13 @@ GLuint loadBMPTexture(const char *filename)
     }
 
     // Read the data position and image size
-    dataPos = *(int*)&(header[0x0A]);
-    imageSize = *(int*)&(header[0x22]);
-    if (imageSize == 0) imageSize = *(int*)&(header[0x02]) - dataPos;
+    dataPos = *(int *)&(header[0x0A]);
+    imageSize = *(int *)&(header[0x22]);
+    if (imageSize == 0)
+        imageSize = *(int *)&(header[0x02]) - dataPos;
 
     // Allocate memory for the image data
-    data = (unsigned char*)malloc(imageSize);
+    data = (unsigned char *)malloc(imageSize);
 
     // Read the image data
     fseek(file, dataPos, SEEK_SET);
