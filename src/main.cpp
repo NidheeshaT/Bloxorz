@@ -5,8 +5,8 @@
 
 using namespace std;
 float x = 0;
-float z = 60;
-float y = 0;
+float z = 200;
+float y = 100;
 int angle = 0;
 
 GLuint texture;
@@ -74,7 +74,7 @@ void reshape(int w, int h)
     glViewport(x, y, min(w, h), min(w, h));
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    glFrustum(-30, 30, -30, 30, 10, 100);
+    glFrustum(-30, 30, -30, 30, 50, 500);
     glMatrixMode(GL_MODELVIEW);
 }
 

@@ -212,6 +212,8 @@ GLuint loadBMPTexture(const char *filename)
     if (imageSize == 0)
         imageSize = *(int *)&(header[0x02]) - dataPos;
 
+    int width=*(int*)&header[18];
+    int height=*(int*)&header[22];
     // Allocate memory for the image data
     data = (unsigned char *)malloc(imageSize);
 
@@ -240,7 +242,7 @@ GLuint loadBMPTexture(const char *filename)
                     GL_CLAMP);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,
                     GL_CLAMP);
-    gluBuild2DMipmaps(GL_TEXTURE_2D, 3, header[18], header[22], 0x80E0, GL_UNSIGNED_BYTE, data);
+    gluBuild2DMipmaps(GL_TEXTURE_2D, 3, width,height, 0x80E0, GL_UNSIGNED_BYTE, data);
 
     // Free the image data
     free(data);
