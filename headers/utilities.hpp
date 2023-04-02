@@ -109,9 +109,7 @@ void drawCuboid(GLfloat x, GLfloat y, GLfloat z, GLfloat size = 1.0f)
 
     glTranslatef(x, y, z);
     glScalef(size / 2, size / 2, size / 2);
-    float white[] = {1, 1, 1, 1};
     glBegin(GL_QUADS);
-
     for (int i = 0; i < 6; i++)
     {
         glNormal3fv(&cuboid::normals[i][0]);
@@ -244,6 +242,7 @@ GLuint loadBMPTexture(const char *filename)
                     GL_CLAMP);
     gluBuild2DMipmaps(GL_TEXTURE_2D, 3, width,height, 0x80E0, GL_UNSIGNED_BYTE, data);
 
+    glBindTexture(GL_TEXTURE_2D, 0);
     // Free the image data
     free(data);
 

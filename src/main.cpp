@@ -4,21 +4,34 @@
 #include "../headers/utilities.hpp"
 
 using namespace std;
-float x = 0;
-float z = 200;
-float y = 100;
+float cameraX = 0;
+float cameraY = 50;
+float cameraZ = 200;
 int angle = 0;
 
-GLuint texture;
+int windowWidth = 100;
+int windowHeight = 100;
+int z_near=50;
+int z_far=500;
+float light_position[] = {0, 400, -400, 1};
+float light_color[] = {1, 0.7, 0.2};
 
-// 1. set up the lighting in the scene
-void light()
+GLuint texture,sun;
+
+
+void camera(int cameraX, int cameraY, int cameraZ)
 {
-    float diffuse[] = {1, 1, 1, 1};
-    float ambient[] = {0.1, 0.1, 0.1, 1};
-    float specular[] = {1, 0.1, 0.1, 1};
-    float position[] = {0, 0, 60, 1};
-    float disable[] = {0, 0, 0, 1};
+    gluLookAt(cameraX, cameraY, cameraZ, 0, 0, 0, 0, 1, 0);
+}
+void material_white();
+void material_emissive();
+// 1. set up the lighting in the scene
+void light(float position[4],float color[3],float diffuse_strength,float ambient_strength,float specular_strength)
+{
+    glDisable(GL_DEPTH_TEST);
+    float diffuse[] = {color[0] * diffuse_strength, color[1] * diffuse_strength, color[2] * diffuse_strength, 1};
+    float ambient[] = {color[0] * ambient_strength, color[1] * ambient_strength, color[2] * ambient_strength, 1};
+    float specular[] = {color[0] * specular_strength, color[1] * specular_strength, color[2] * specular_strength, 1};
     glShadeModel(GL_SMOOTH);
     glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuse);
     glLightfv(GL_LIGHT0, GL_AMBIENT, ambient);
@@ -26,6 +39,17 @@ void light()
     glLightfv(GL_LIGHT0, GL_POSITION, position);
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0);
+    glPushMatrix();
+        glTranslatef(position[0], position[1], position[2]);
+        material_emissive();
+        glBindTexture(GL_TEXTURE_2D, sun);
+    GLUquadricObj *sphere = gluNewQuadric();
+        gluQuadricTexture(sphere, GL_TRUE);
+        gluQuadricNormals(sphere, GLU_SMOOTH);
+        gluSphere(sphere, 100.0, 50, 50);
+        gluDeleteQuadric(sphere);
+    glPopMatrix();
+    glEnable(GL_DEPTH_TEST);
 }
 
 // 2. set up the material properties for objects in the scene
@@ -37,19 +61,40 @@ void material_white()
     glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, white);
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, white);
     glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 120.0f);
+    glMaterialfv(GL_FRONT, GL_EMISSION, disable);
+}
+
+void material_emissive()
+{
+    float disable[] = {0, 0, 0, 0};
+    GLfloat mat_emission[] = { 0.6f, 0.4784f, 0.0f, 1.0 };
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, disable);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, disable);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, disable);
+    glMaterialfv(GL_FRONT, GL_EMISSION, mat_emission);
+}
+void material_emissive_white()
+{
+    float disable[] = {0, 0, 0, 0};
+    GLfloat mat_emission[] = { 1, 0.8, 0.5, 1.0 };
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, disable);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, disable);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, disable);
+    glMaterialfv(GL_FRONT, GL_EMISSION, mat_emission);
 }
 
 // 3. initialize OpenGL and load textures
 void init()
 {
     glClearColor(0.0, 0.0, 0.0, 0.0);
-    light();
-    material_white();
+    glLoadIdentity();
+    light(light_position,light_color,0.6,0.2,1);
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
     glEnable(GL_TEXTURE_2D);
     glEnable(GL_NORMALIZE);
     texture = loadBMPTexture("assets/bricks.bmp");
+    sun=loadBMPTexture("assets/2k_sun.bmp");
 }
 
 // 4. render the scene
@@ -57,10 +102,13 @@ void display()
 {
     glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
     glLoadIdentity();
-    gluLookAt(x, y, z, 0, 0, 0, 0, 1, 0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    camera(cameraX, cameraY, cameraZ);
+    light(light_position,light_color,0.6,0.2,1);
     glPushMatrix();
-    glTranslatef(0, -40, 0);
     glRotatef(angle, 0, 1, 0);
+    material_white();
+    glBindTexture(GL_TEXTURE_2D, texture);
     drawCuboid(0, 0, 0, 40);
     glPopMatrix();
     glutSwapBuffers();
@@ -74,7 +122,7 @@ void reshape(int w, int h)
     glViewport(x, y, min(w, h), min(w, h));
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    glFrustum(-30, 30, -30, 30, 50, 500);
+    glFrustum(windowWidth / -2, windowWidth / 2, windowHeight / -2, windowHeight / 2, z_near, z_far);
     glMatrixMode(GL_MODELVIEW);
 }
 
@@ -89,15 +137,7 @@ void timer(int t)
 // 7. handle keyboard input and move the camera
 void keyboard(unsigned char ch, int, int)
 {
-    if (ch == 'w')
-        y++;
-    else if (ch == 's')
-        y--;
 
-    if (ch == 'd')
-        x++;
-    else if (ch == 'a')
-        x--;
 }
 
 // 8. initializes GLUT and starts the program loop
