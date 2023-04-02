@@ -1,6 +1,8 @@
 #include <GLUT/glut.h>
 #include <iostream>
 
+/* Cube - Platform */
+// 1. Namespace for cube vertices, normals, texture coords and faces.
 namespace cube
 {
     GLfloat vertices[8][3] = {
@@ -38,6 +40,95 @@ namespace cube
 
 }
 
+// 2. Draws a cube at the given position and size.
+void drawCube(GLfloat x, GLfloat y, GLfloat z, GLfloat size = 1.0f)
+{
+
+    glTranslatef(x, y, z);
+    glScalef(size / 2, size / 2, size / 2);
+    float white[] = {1, 1, 1, 1};
+    glBegin(GL_QUADS);
+
+    for (int i = 0; i < 6; i++)
+    {
+        glNormal3fv(&cube::normals[i][0]);
+        glTexCoord2fv(&cube::texcoords[0][0]);
+        glVertex3fv(&cube::vertices[(int)cube::faces[i][0]][0]);
+        glTexCoord2fv(&cube::texcoords[1][0]);
+        glVertex3fv(&cube::vertices[(int)cube::faces[i][1]][0]);
+        glTexCoord2fv(&cube::texcoords[2][0]);
+        glVertex3fv(&cube::vertices[(int)cube::faces[i][2]][0]);
+        glTexCoord2fv(&cube::texcoords[3][0]);
+        glVertex3fv(&cube::vertices[(int)cube::faces[i][3]][0]);
+    }
+    glEnd();
+}
+
+
+/* Cuboid - Block */
+// 1. Namespace for cuboid vertices, normals, texture coordinates and faces.
+namespace cuboid
+{
+    GLfloat vertices[8][3] = {
+        {-1.0, -1.0, 1.0}, 
+        {1.0, -1.0, 1.0},
+        {1.0, 2.0, 1.0},
+        {-1.0, 2.0, 1.0},
+        {-1.0, -1.0, -1.0},
+        {1.0, -1.0, -1.0},
+        {1.0, 2.0, -1.0},
+        {-1.0, 2.0, -1.0},
+    };
+    GLfloat normals[6][3] = {
+        {0.0, 0.0, 1.0},  // front
+        {0.0, 0.0, -1.0}, // back
+        {1.0, 0.0, 0.0},  // right
+        {-1.0, 0.0, 0.0}, // left
+        {0.0, 1.0, 0.0},  // top
+        {0.0, -1.0, 0.0}, // bottom
+    };
+    GLfloat texcoords[4][2] = {
+        {0.0, 0.0},
+        {1.0, 0.0},
+        {1.0, 1.0},
+        {0.0, 1.0},
+    };
+    GLfloat faces[6][4] = {
+        {0, 1, 2, 3}, // front
+        {5, 4, 7, 6}, // back
+        {1, 5, 6, 2}, // right
+        {4, 0, 3, 7}, // left
+        {3, 2, 6, 7}, // top
+        {4, 5, 1, 0}, // bottom
+    };
+}
+
+// 2. Draws a cuboid at the given position and size.
+void drawCuboid(GLfloat x, GLfloat y, GLfloat z, GLfloat size = 1.0f)
+{
+
+    glTranslatef(x, y, z);
+    glScalef(size / 2, size / 2, size / 2);
+    float white[] = {1, 1, 1, 1};
+    glBegin(GL_QUADS);
+
+    for (int i = 0; i < 6; i++)
+    {
+        glNormal3fv(&cuboid::normals[i][0]);
+        glTexCoord2fv(&cuboid::texcoords[0][0]);
+        glVertex3fv(&cuboid::vertices[(int)cuboid::faces[i][0]][0]);
+        glTexCoord2fv(&cuboid::texcoords[1][0]);
+        glVertex3fv(&cuboid::vertices[(int)cuboid::faces[i][1]][0]);
+        glTexCoord2fv(&cuboid::texcoords[2][0]);
+        glVertex3fv(&cuboid::vertices[(int)cuboid::faces[i][2]][0]);
+        glTexCoord2fv(&cuboid::texcoords[3][0]);
+        glVertex3fv(&cuboid::vertices[(int)cuboid::faces[i][3]][0]);
+    }
+    glEnd();
+}
+
+/* Texture functions */
+// 1. loads the texture from the file and returns the texture ID.
 GLuint loadtextures(const char *filename, float width, float height)
 {
     GLuint texture;
@@ -74,34 +165,13 @@ GLuint loadtextures(const char *filename, float width, float height)
     return texture;
 }
 
+// 2. frees the specified texture
 void freetexture(GLuint texture)
 {
     glDeleteTextures(1, &texture);
 }
 
-void drawCube(GLfloat x, GLfloat y, GLfloat z, GLfloat size = 1.0f)
-{
-
-    glTranslatef(x, y, z);
-    glScalef(size / 2, size / 2, size / 2);
-    float white[] = {1, 1, 1, 1};
-    glBegin(GL_QUADS);
-
-    for (int i = 0; i < 6; i++)
-    {
-        glNormal3fv(&cube::normals[i][0]);
-        glTexCoord2fv(&cube::texcoords[0][0]);
-        glVertex3fv(&cube::vertices[(int)cube::faces[i][0]][0]);
-        glTexCoord2fv(&cube::texcoords[1][0]);
-        glVertex3fv(&cube::vertices[(int)cube::faces[i][1]][0]);
-        glTexCoord2fv(&cube::texcoords[2][0]);
-        glVertex3fv(&cube::vertices[(int)cube::faces[i][2]][0]);
-        glTexCoord2fv(&cube::texcoords[3][0]);
-        glVertex3fv(&cube::vertices[(int)cube::faces[i][3]][0]);
-    }
-    glEnd();
-}
-
+// 3. loads the BMP image file as a texture for OpenGL
 GLuint loadBMPTexture(const char *filename)
 {
     GLuint texture;
