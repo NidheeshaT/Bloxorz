@@ -2,33 +2,40 @@
 #include <iostream>
 #include <math.h>
 #include "../headers/utilities.hpp"
+#define PI 3.14159265
 
 using namespace std;
-float cameraX = 0;
-float cameraY = 50;
-float cameraZ = 200;
-int angle = 0;
+float cameraRadius=200;
+int angleX=0;
+int angleY=0;
+// int angle=0;
 
 int windowWidth = 100;
 int windowHeight = 100;
 int z_near=50;
 int z_far=500;
-float light_position[] = {0, 400, -400, 1};
+float light_position[] = {0, 0, -300, 1};
 float light_color[] = {1, 0.7, 0.2};
 
 GLuint texture,sun;
 
 
-void camera(int cameraX, int cameraY, int cameraZ)
+void camera(float cameraRadius,int angleX,int angleY)
 {
-    gluLookAt(cameraX, cameraY, cameraZ, 0, 0, 0, 0, 1, 0);
+    GLdouble cameraX,cameraY, cameraZ;
+    cameraY=sin(PI*angleX/180)*cameraRadius;
+    cameraZ=cos(PI*angleX/180)*cameraRadius;
+
+    cameraX=sin(PI*angleY/180)*cameraZ;
+    cameraZ=cos(PI*angleY/180)*cameraZ;
+    gluLookAt(cameraX, cameraY, cameraZ, 0, 0, 0,0, cos(PI*angleX/180), 0);
 }
 void material_white();
 void material_emissive();
 // 1. set up the lighting in the scene
 void light(float position[4],float color[3],float diffuse_strength,float ambient_strength,float specular_strength)
 {
-    glDisable(GL_DEPTH_TEST);
+    // glDisable(GL_DEPTH_TEST);
     float diffuse[] = {color[0] * diffuse_strength, color[1] * diffuse_strength, color[2] * diffuse_strength, 1};
     float ambient[] = {color[0] * ambient_strength, color[1] * ambient_strength, color[2] * ambient_strength, 1};
     float specular[] = {color[0] * specular_strength, color[1] * specular_strength, color[2] * specular_strength, 1};
@@ -49,7 +56,7 @@ void light(float position[4],float color[3],float diffuse_strength,float ambient
         gluSphere(sphere, 100.0, 50, 50);
         gluDeleteQuadric(sphere);
     glPopMatrix();
-    glEnable(GL_DEPTH_TEST);
+    // glEnable(GL_DEPTH_TEST);
 }
 
 // 2. set up the material properties for objects in the scene
@@ -76,7 +83,7 @@ void material_emissive()
 void material_emissive_white()
 {
     float disable[] = {0, 0, 0, 0};
-    GLfloat mat_emission[] = { 1, 0.8, 0.5, 1.0 };
+    GLfloat mat_emission[] = { 1, 0.8, 2, 1.0 };
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, disable);
     glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, disable);
     glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, disable);
@@ -103,15 +110,16 @@ void display()
     glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
     glLoadIdentity();
     glBindTexture(GL_TEXTURE_2D, 0);
-    camera(cameraX, cameraY, cameraZ);
+    camera(cameraRadius,angleX,angleY);
     light(light_position,light_color,0.6,0.2,1);
     glPushMatrix();
-    glRotatef(angle, 0, 1, 0);
+    // glRotatef(angle, 0, 1, 0);
     material_white();
     glBindTexture(GL_TEXTURE_2D, texture);
     drawCuboid(0, 0, 0, 40);
     glPopMatrix();
     glutSwapBuffers();
+    glFlush();
 }
 
 // 5. handle window resizing and set up the projection matrix
@@ -131,13 +139,21 @@ void timer(int t)
 {
     glutPostRedisplay();
     glutTimerFunc(1000 / 60, timer, 0);
-    angle += 2; // stop auto rotation
+    // angle += 2; // stop auto rotation
 }
 
 // 7. handle keyboard input and move the camera
 void keyboard(unsigned char ch, int, int)
 {
+    if(ch=='w')
+        angleX=(angleX+1)%360;
+    else if(ch=='s')
+        angleX=(angleX-1)%360;
 
+    if(ch=='d')
+        angleY=(angleY+1)%360;
+    else if(ch=='a')
+        angleY=(angleY-1)%360;
 }
 
 // 8. initializes GLUT and starts the program loop
