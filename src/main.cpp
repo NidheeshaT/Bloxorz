@@ -2,19 +2,21 @@
 #include <iostream>
 #include <math.h>
 #include "../headers/utilities.hpp"
+#include "../headers/PlatformCube.hpp"
+#include "../headers/Player.hpp"
 #define PI 3.14159265
 
 using namespace std;
 float cameraRadius=200;
 int angleX=0;
 int angleY=0;
-// int angle=0;
+int angle=0;
 
 int windowWidth = 100;
 int windowHeight = 100;
 int z_near=50;
-int z_far=500;
-float light_position[] = {0, 0, -300, 1};
+int z_far=800;
+float light_position[] = {0, 0, -600, 1};
 float light_color[] = {1, 0.7, 0.2};
 
 GLuint texture,sun;
@@ -94,8 +96,8 @@ void material_emissive_white()
 void init()
 {
     glClearColor(0.0, 0.0, 0.0, 0.0);
-    glLoadIdentity();
-    light(light_position,light_color,0.6,0.2,1);
+    // glLoadIdentity();
+    // light(light_position,light_color,0.6,0.2,1);
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
     glEnable(GL_TEXTURE_2D);
@@ -111,12 +113,11 @@ void display()
     glLoadIdentity();
     glBindTexture(GL_TEXTURE_2D, 0);
     camera(cameraRadius,angleX,angleY);
-    light(light_position,light_color,0.6,0.2,1);
+    light(light_position,light_color,0.6,0.3,1);
     glPushMatrix();
-    // glRotatef(angle, 0, 1, 0);
     material_white();
-    glBindTexture(GL_TEXTURE_2D, texture);
-    drawCuboid(0, 0, 0, 40);
+    new Player(40,0,0,40,0);
+    new PlatformCube(0,0,0,40,texture);
     glPopMatrix();
     glutSwapBuffers();
     glFlush();
