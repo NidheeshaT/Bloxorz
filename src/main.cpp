@@ -1,5 +1,6 @@
 #include "GLUT/glut.h"
 #include <iostream>
+#include <fstream>
 #include <math.h>
 #include "../headers/utilities.hpp"
 #include "../headers/PlatformCube.hpp"
@@ -16,7 +17,7 @@ int windowWidth = 100;
 int windowHeight = 100;
 int z_near=50;
 int z_far=800;
-float light_position[] = {0, 0, -600, 1};
+float light_position[] = {0, 300, -600, 1};
 float light_color[] = {1, 0.7, 0.2};
 
 GLuint texture,sun;
@@ -106,6 +107,31 @@ void init()
     sun=loadBMPTexture("assets/2k_sun.bmp");
 }
 
+void createPlatformFromTextFile(const char* fileName, GLfloat cubeSize, GLuint texture) {
+    ifstream file(fileName);
+    string line;
+    GLfloat x = 0, y = 0, z = 0;
+
+    if (file.is_open()) {
+        cout << "File is open" << endl;
+        while (getline(file, line)) {
+            for (int i = 0; i < line.length(); i++) {
+                char c = line[i];
+                if (c == 'o') {
+                    new PlatformCube(x, y, z, cubeSize, texture);
+                } else if (c == 'S') {
+                    new PlatformCube(x, y, z, cubeSize, texture);
+                    new Player(x, cubeSize+cubeSize/2, z, cubeSize, 0);
+                }
+                x += cubeSize;
+            }
+            z -= cubeSize;
+            x = 0;
+        }
+        file.close();
+    }
+}
+
 // 4. render the scene
 void display()
 {
@@ -116,8 +142,9 @@ void display()
     light(light_position,light_color,0.6,0.3,1);
     glPushMatrix();
     material_white();
-    new Player(40,0,0,40,0);
-    new PlatformCube(0,0,0,40,texture);
+    // new Player(40,0,0,40,0);
+    // new PlatformCube(0,0,0,40,texture);
+    createPlatformFromTextFile("./src/a.txt", 40, texture);
     glPopMatrix();
     glutSwapBuffers();
     glFlush();
