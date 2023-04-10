@@ -8,7 +8,7 @@
 #define PI 3.14159265
 
 using namespace std;
-float cameraRadius = 200;
+float cameraRadius = 300;
 int angleX = 0;
 int angleY = 0;
 int angle = 0;
@@ -17,7 +17,7 @@ int windowWidth = 100;
 int windowHeight = 100;
 int z_near = 50;
 int z_far = 800;
-float light_position[] = {0, 300, -600, 1};
+float light_position[] = {0, 600, -600, 1};
 float light_color[] = {1, 0.7, 0.2};
 
 GLuint texture, sun;
@@ -101,7 +101,12 @@ void material_emissive_white()
     glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, disable);
     glMaterialfv(GL_FRONT, GL_EMISSION, mat_emission);
 }
-
+void menuProjection(){
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    gluOrtho2D(0, glutGet(GLUT_WINDOW_WIDTH), 0, glutGet(GLUT_WINDOW_HEIGHT));
+    glMatrixMode(GL_MODELVIEW);
+}
 // 3. initialize OpenGL and load textures
 void init()
 {
@@ -114,6 +119,7 @@ void init()
     glEnable(GL_NORMALIZE);
     texture = loadBMPTexture("assets/bricks.bmp");
     sun = loadBMPTexture("assets/2k_sun.bmp");
+    menuProjection();
 }
 
 // 4. create platform from text file containing map [o = platform, S = player, T = target, - = empty space]
@@ -137,7 +143,7 @@ void createPlatformFromTextFile(const char *fileName, GLfloat cubeSize, GLuint t
                 else if (c == 'S')
                 {
                     new PlatformCube(x, y, z, cubeSize, texture);
-                    new Player(x, cubeSize + cubeSize / 2, z, cubeSize, 0);
+                    new Player(x, cubeSize+cubeSize/2, z, cubeSize, 0);
                 }
                 x += cubeSize;
             }
@@ -160,17 +166,10 @@ void drawString(const char *str, float x, float y, void *font)
 void menuScreen()
 {
     glClearColor(0, 0, 0, 0);
-    glClear(GL_COLOR_BUFFER_BIT);
-
     // Set up text parameters
-    glColor3f(1.0, 1.0, 1.0);
-    glMatrixMode(GL_PROJECTION);
+    // glColor3f(1.0, 1.0, 1.0);
+
     glPushMatrix();
-    glLoadIdentity();
-    gluOrtho2D(0, glutGet(GLUT_WINDOW_WIDTH), 0, glutGet(GLUT_WINDOW_HEIGHT));
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-    glLoadIdentity();
 
     // Draw text
     const char *text = "Hello, Play Bloxorz!";
@@ -208,8 +207,8 @@ void menuScreen()
     drawString(clickText, clickTextX, clickTextY, GLUT_BITMAP_TIMES_ROMAN_24);
 
     glPopMatrix();
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
+    // glMatrixMode(GL_PROJECTION);
+    // glPopMatrix();
 }
 
 void gameScreen()
@@ -248,11 +247,18 @@ void display()
     glFlush();
 }
 
+void gameProjection(){
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glFrustum(windowWidth / -2, windowWidth / 2, windowHeight / -2, windowHeight / 2, z_near, z_far);
+    glMatrixMode(GL_MODELVIEW);
+}
 void mouse(int button, int state, int x, int y)
 {
     if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
     {
         scene = GAME;
+        gameProjection();
         gameScreen();
     }
 }
@@ -263,10 +269,12 @@ void reshape(int w, int h)
     int x = (w > h ? (w - min(w, h)) / 2 : 0);
     int y = (h > w ? (h - min(w, h)) / 2 : 0);
     glViewport(x, y, min(w, h), min(w, h));
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    glFrustum(windowWidth / -2, windowWidth / 2, windowHeight / -2, windowHeight / 2, z_near, z_far);
-    glMatrixMode(GL_MODELVIEW);
+    if(scene == MENU){
+        menuProjection();
+    }
+    else{
+        gameProjection();
+    }
 }
 
 // 7. update the scene at a fixed time interval
