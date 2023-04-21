@@ -1,11 +1,14 @@
 #include "GLUT/glut.h"
 #include <iostream>
+#include<unordered_map>
 #include <fstream>
 #include <math.h>
 #include "../headers/utilities.hpp"
 #include "../headers/PlatformCube.hpp"
 #include "../headers/Player.hpp"
 #define PI 3.14159265
+unsigned int prevTime = 0;
+
 
 using namespace std;
 float cameraRadius = 300;
@@ -19,8 +22,17 @@ int z_near = 50;
 int z_far = 800;
 float light_position[] = {0, 600, -600, 1};
 float light_color[] = {1, 0.7, 0.2};
-
+struct hash_pair {
+    template<class T1, class T2>
+    size_t operator()(const std::pair<T1, T2>& p) const {
+        auto hash1 = std::hash<T1>{}(p.first);
+        auto hash2 = std::hash<T2>{}(p.second);
+        return hash1 ^ hash2;
+    }
+};
 GLuint texture, sun;
+unordered_map<pair<int,int>,PlatformCube*,hash_pair> Platform;
+Player *P;
 
 enum Scene
 {
@@ -30,6 +42,8 @@ enum Scene
 };
 
 Scene scene = MENU;
+bool changedToGame=false;
+void key_detect(int ch,int x,int y);
 
 void camera(float cameraRadius, int angleX, int angleY)
 {
@@ -128,7 +142,7 @@ void createPlatformFromTextFile(const char *fileName, GLfloat cubeSize, GLuint t
     ifstream file(fileName);
     string line;
     GLfloat x = 0, y = 0, z = 0;
-
+    PlatformCube *cube;
     if (file.is_open())
     {
         while (getline(file, line))
@@ -138,12 +152,15 @@ void createPlatformFromTextFile(const char *fileName, GLfloat cubeSize, GLuint t
                 char c = line[i];
                 if (c == 'o')
                 {
-                    new PlatformCube(x, y, z, cubeSize, texture);
+                    cube=new PlatformCube(x, y, z, cubeSize, texture);
+                    Platform.insert({{x,z},cube});
                 }
                 else if (c == 'S')
                 {
-                    new PlatformCube(x, y, z, cubeSize, texture);
-                    new Player(x, cubeSize+cubeSize/2, z, cubeSize, 0);
+                    cube=new PlatformCube(x, y, z, cubeSize, texture);
+                    P=new Player(x, cubeSize+cubeSize/2, z, cubeSize, 0);
+                    glutSpecialFunc(key_detect);
+                    Platform.insert({{x,z},cube});
                 }
                 x += cubeSize;
             }
@@ -153,7 +170,12 @@ void createPlatformFromTextFile(const char *fileName, GLfloat cubeSize, GLuint t
         file.close();
     }
 }
-
+void renderGame(float delta){
+    P->render(delta);
+    for(auto p=Platform.begin();p!=Platform.end();p++){
+        p->second->render();
+    }
+}
 void drawString(const char *str, float x, float y, void *font)
 {
     glRasterPos2f(x, y);
@@ -211,14 +233,20 @@ void menuScreen()
     // glPopMatrix();
 }
 
-void gameScreen()
+void gameScreen(float delta)
 {
     glBindTexture(GL_TEXTURE_2D, 0);
     camera(cameraRadius, angleX, angleY);
     light(light_position, light_color, 0.6, 0.3, 1);
     glPushMatrix();
     material_white();
-    createPlatformFromTextFile("./maps/l1.txt", 40, texture);
+    if(changedToGame){
+        changedToGame=false;
+        createPlatformFromTextFile("./maps/l1.txt", 40, texture);
+    }
+    else{
+        renderGame(delta);
+    }
     glPopMatrix();
 }
 
@@ -229,6 +257,10 @@ void endScreen()
 // 5. render the scene
 void display()
 {
+    unsigned int currTime = glutGet(GLUT_ELAPSED_TIME);
+    float delta = (float)(currTime - prevTime) / 1000.0f;
+    prevTime = currTime;
+
     glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
     glLoadIdentity();
     if (scene == MENU)
@@ -237,7 +269,7 @@ void display()
     }
     else if (scene == GAME)
     {
-        gameScreen();
+        gameScreen(delta);
     }
     else
     {
@@ -255,11 +287,12 @@ void gameProjection(){
 }
 void mouse(int button, int state, int x, int y)
 {
-    if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
+    if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN && scene!=GAME)
     {
         scene = GAME;
+        changedToGame=true;
         gameProjection();
-        gameScreen();
+        // gameScreen(0);
     }
 }
 
@@ -286,7 +319,7 @@ void timer(int t)
 }
 
 // 8. handle keyboard input and move the camera
-void keyboard(unsigned char ch, int, int)
+void keyboard(unsigned char ch, int x, int y)
 {
     if (ch == 'w')
         angleX = (angleX + 10) % 360;
@@ -297,6 +330,10 @@ void keyboard(unsigned char ch, int, int)
         angleY = (angleY + 10) % 360;
     else if (ch == 'a')
         angleY = (angleY - 10) % 360;
+}
+
+void key_detect(int ch,int x,int y){
+    P->key_detect(ch,x,y);
 }
 
 // 9. initializes GLUT and starts the program loop
