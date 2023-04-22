@@ -37,6 +37,7 @@ Player *P;
 enum Scene
 {
     MENU,
+    PAUSE,
     GAME,
     GAMEOVER
 };
@@ -185,16 +186,34 @@ void drawString(const char *str, float x, float y, void *font)
     }
 }
 
+void drawButton(const char *text, int x, int y, int buttonWidth, int buttonHeight, void *font)
+{
+    int textWidth = glutBitmapLength(font, (const unsigned char *)text);
+    int buttonTextX = x + (buttonWidth - textWidth) / 2;
+    int buttonTextY = y + (buttonHeight / 2) - 8;
+
+    // Draw button
+    glColor3f(0.0, 0.0, 1.0);
+    glBegin(GL_QUADS);
+    glVertex2i(x, y);
+    glVertex2i(x, y + buttonHeight);
+    glVertex2i(x + buttonWidth, y + buttonHeight);
+    glVertex2i(x + buttonWidth, y);
+    glEnd();
+
+    // Draw button text
+    glColor3f(1.0, 1.0, 1.0);
+    drawString(text, buttonTextX, buttonTextY, font);
+}
+
 void menuScreen()
 {
     glClearColor(0, 0, 0, 0);
-    // Set up text parameters
-    // glColor3f(1.0, 1.0, 1.0);
 
     glPushMatrix();
 
     // Draw text
-    const char *text = "Hello, Play Bloxorz!";
+    const char *text = "Welcome to Bloxorz!";
     int textWidth = glutBitmapLength(GLUT_BITMAP_TIMES_ROMAN_24, (const unsigned char *)text);
     int x = (glutGet(GLUT_WINDOW_WIDTH) - textWidth) / 2;
     int y = glutGet(GLUT_WINDOW_HEIGHT) / 2 + 50;
@@ -205,32 +224,53 @@ void menuScreen()
     int buttonHeight = 50;
     int buttonX = (glutGet(GLUT_WINDOW_WIDTH) - buttonWidth) / 2;
     int buttonY = y - 80;
-    glColor3f(0.0, 0.0, 1.0);
-    glBegin(GL_QUADS);
-    glVertex2i(buttonX, buttonY);
-    glVertex2i(buttonX, buttonY + buttonHeight);
-    glVertex2i(buttonX + buttonWidth, buttonY + buttonHeight);
-    glVertex2i(buttonX + buttonWidth, buttonY);
-    glEnd();
+    drawButton("Play >>", buttonX, buttonY, buttonWidth, buttonHeight, GLUT_BITMAP_TIMES_ROMAN_24);
 
-    // Draw button text
-    glColor3f(1.0, 1.0, 1.0);
-    const char *buttonText = "Play >>";
-    int buttonTextWidth = glutBitmapLength(GLUT_BITMAP_TIMES_ROMAN_24, (const unsigned char *)buttonText);
-    int buttonTextX = buttonX + (buttonWidth - buttonTextWidth) / 2;
-    int buttonTextY = buttonY + (buttonHeight / 2) - 8;
-    drawString(buttonText, buttonTextX, buttonTextY, GLUT_BITMAP_TIMES_ROMAN_24);
-
-    // Draw click anywhere text
-    const char *clickText = "Click anywhere to start game";
-    int clickTextWidth = glutBitmapLength(GLUT_BITMAP_TIMES_ROMAN_24, (const unsigned char *)clickText);
-    int clickTextX = (glutGet(GLUT_WINDOW_WIDTH) - clickTextWidth) / 2;
-    int clickTextY = buttonY - 30;
-    drawString(clickText, clickTextX, clickTextY, GLUT_BITMAP_TIMES_ROMAN_24);
+    // Draw instructions
+    const char *instructions1 = "Instructions:";
+    const char *instructions2 = "WASD to move camera";
+    const char *instructions3 = "Arrows to move block";
+    int instructionsX = (glutGet(GLUT_WINDOW_WIDTH) - glutBitmapLength(GLUT_BITMAP_HELVETICA_12, (const unsigned char *)instructions1)) / 2.3;
+    int instructionsY = buttonY - 50;
+    drawString(instructions1, instructionsX, instructionsY, GLUT_BITMAP_HELVETICA_12);
+    drawString(instructions2, instructionsX, instructionsY - 30, GLUT_BITMAP_HELVETICA_12);
+    drawString(instructions3, instructionsX, instructionsY - 60, GLUT_BITMAP_HELVETICA_12);
 
     glPopMatrix();
-    // glMatrixMode(GL_PROJECTION);
-    // glPopMatrix();
+}
+
+void pauseScreen()
+{
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    gluOrtho2D(0, glutGet(GLUT_WINDOW_WIDTH), 0, glutGet(GLUT_WINDOW_HEIGHT));
+    glMatrixMode(GL_MODELVIEW);
+    
+    // Disable lighting so text is not affected by lighting
+    glDisable(GL_LIGHTING);
+        
+    glClear(GL_COLOR_BUFFER_BIT);
+    glPushMatrix();
+
+    // Draw button
+    int y = glutGet(GLUT_WINDOW_HEIGHT) / 2 + 50;
+    int buttonWidth = 200;
+    int buttonHeight = 50;
+    int buttonX = (glutGet(GLUT_WINDOW_WIDTH) - buttonWidth) / 2;
+    int buttonY = y - 80;
+    drawButton("Resume", buttonX, buttonY, buttonWidth, buttonHeight, GLUT_BITMAP_TIMES_ROMAN_24);
+
+    glColor3f(1.0, 1.0, 1.0);
+    const char *text = "PAUSED"; 
+    int X = (glutGet(GLUT_WINDOW_WIDTH) - glutBitmapLength(GLUT_BITMAP_HELVETICA_12, (const unsigned char *)text)) / 2.3;
+    int Y = buttonY - 50;
+    void *font = GLUT_BITMAP_TIMES_ROMAN_24;
+    drawString(text, X, Y, font);
+
+    glPopMatrix();
+    
+    // Re-enable lighting and depth test
+    glEnable(GL_LIGHTING);
 }
 
 void gameScreen(float delta)
@@ -267,6 +307,10 @@ void display()
     {
         menuScreen();
     }
+    else if (scene == PAUSE)
+    {
+        pauseScreen();
+    }
     else if (scene == GAME)
     {
         gameScreen(delta);
@@ -285,14 +329,24 @@ void gameProjection(){
     glFrustum(windowWidth / -2, windowWidth / 2, windowHeight / -2, windowHeight / 2, z_near, z_far);
     glMatrixMode(GL_MODELVIEW);
 }
+
 void mouse(int button, int state, int x, int y)
 {
-    if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN && scene!=GAME)
+    if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN && scene != GAME)
     {
-        scene = GAME;
-        changedToGame=true;
-        gameProjection();
-        // gameScreen(0);
+        int buttonWidth = 200;
+        int buttonHeight = 50;
+        int buttonX = (glutGet(GLUT_WINDOW_WIDTH) - buttonWidth) / 2;
+        int buttonY = glutGet(GLUT_WINDOW_HEIGHT) / 2 + 50 - 80;
+
+        // Check if the mouse click is inside the button area
+        if (x >= buttonX && x <= buttonX + buttonWidth &&
+            y >= buttonY && y <= buttonY + buttonHeight)
+        {
+            scene = GAME;
+            changedToGame = true;
+            gameProjection();
+        }
     }
 }
 
@@ -330,7 +384,14 @@ void keyboard(unsigned char ch, int x, int y)
         angleY = (angleY + 10) % 360;
     else if (ch == 'a')
         angleY = (angleY - 10) % 360;
+        
+    if (ch == 'p' || ch == 'P')
+    {
+        if (scene == GAME)
+            scene = PAUSE;
+    }
 }
+
 
 void key_detect(int ch,int x,int y){
     P->key_detect(ch,x,y);

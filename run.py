@@ -8,4 +8,4 @@ if len(sys.argv)==2 and sys.argv[1]=='win':
         os.system('g++ -I./include -L./lib src/*.cpp -lfreeglut -lglu32 -lopengl32 -o main && main')
 else:
     # Mac
-    os.system('g++ -framework OpenGL -framework GLUT src/*.cpp && ./a.out')
+    os.system('g++ -std=c++20 -framework OpenGL -framework GLUT src/*.cpp && ./a.out')
