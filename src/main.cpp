@@ -50,6 +50,7 @@ void camera(float cameraRadius, int angleX, int angleY)
 }
 void material_white();
 void material_emissive();
+void drawString(const char *str, float x, float y, void *font);
 
 // 1. set up the lighting in the scene
 void light(float position[4], float color[3], float diffuse_strength, float ambient_strength, float specular_strength)
@@ -136,6 +137,7 @@ void createPlatformFromTextFile(const char *fileName, GLfloat cubeSize, GLuint t
     string line;
     GLfloat x = 0, y = 0, z = 0;
     PlatformCube *cube;
+    int px,py,pz;
     if (file.is_open())
     {
         while (getline(file, line))
@@ -151,7 +153,9 @@ void createPlatformFromTextFile(const char *fileName, GLfloat cubeSize, GLuint t
                 else if (c == 'S')
                 {
                     cube=new PlatformCube(x, y, z, cubeSize, texture);
-                    P=new Player(x, cubeSize+cubeSize/2, z, cubeSize, 0,Platform);
+                    px=x;
+                    py=cubeSize+cubeSize/2;
+                    pz=z;
                     glutSpecialFunc(key_detect);
                     Platform->insert({{x,z},cube});
                 }
@@ -159,6 +163,7 @@ void createPlatformFromTextFile(const char *fileName, GLfloat cubeSize, GLuint t
             }
             z -= cubeSize;
             x = 0;
+            P=new Player(px,py , pz, cubeSize, 0,Platform);
         }
         file.close();
     }

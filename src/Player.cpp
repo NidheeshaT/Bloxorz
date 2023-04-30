@@ -247,14 +247,97 @@ void Player::checkFall(float delta){
     if(y<=bottomLimit)
         return;
     if(inFall){
-        // if(orientation==VERTICAL){
+        if(orientation==VERTICAL){
             y-=fallSpeed*delta;
             if(y<=bottomLimit){
                 inFall=false;
+                //gameover 
             }
-        // }
+        }
+        else if(orientation==HORIZONTAL_X){
+            bool left=Platform->find({x,z})==Platform->end();
+            bool right=Platform->find({x+size,z})==Platform->end();
+
+            if(left && right){
+                y-=fallSpeed*delta;
+                //gameover
+            }
+            else if(left){
+                angle+=speed*delta;
+                if(angle>=90){
+                    angle=90;   
+                    orientation=VERTICAL;
+                    y-=size;
+                    glTranslatef(0,-size,0);
+                    inFall=false;
+                    return;
+                }
+                glTranslatef(+size/2,-size,-size+size/2);
+                glRotatef(angle,0,0,1);
+                glTranslatef(-size/2,size,size-size/2);
+            }
+            else if(right){
+                angle-=speed*delta;
+                if(angle<=-90){
+                    angle=-90;   
+                    orientation=VERTICAL;
+                    y-=size;
+                    x+=size;
+                    glTranslatef(size,-size,0);
+                    inFall=false;
+                    return;
+                }
+                glTranslatef(+size/2,-size,-size+size/2);
+                glRotatef(angle,0,0,1);
+                glTranslatef(-size/2,size,size-size/2);
+            }
+            if(y<=bottomLimit)
+                inFall=false;
+        }
+        else if(orientation==HORIZONTAL_Z){
+            bool front=Platform->find({x,z})==Platform->end();
+            bool back=Platform->find({x,z-size})==Platform->end();
+            if(front && back){
+                y-=fallSpeed*delta;
+                //gameover
+            }
+            else if(front){
+                angle+=speed*delta;
+                if(angle>=90){
+                    angle=90;   
+                    orientation=VERTICAL;
+                    y-=size;
+                    glTranslatef(0,-size,0);
+                    inFall=false;
+                    return;
+                }
+                glTranslatef(0,-size,-size/2);
+                glRotatef(angle,1,0,0);
+                glTranslatef(0,size,+size/2);
+            }
+            else if(back){
+                angle-=speed*delta;
+                if(angle<=-90){
+                    angle=-90;   
+                    orientation=VERTICAL;
+                    y-=size;
+                    z-=size;
+                    glTranslatef(0,-size,-size);
+                    inFall=false;
+                    return;
+                }
+                glTranslatef(0,-size,-size/2);
+                glRotatef(angle,1,0,0);
+                glTranslatef(0,size,+size/2);
+            }
+            if(y<=bottomLimit)
+                inFall=false;
+        }
         return;
     }
+
+
+    //to check if player is in falling positions
     if(orientation==VERTICAL)
     {
         if(Platform->find({x,z})==Platform->end())
@@ -267,6 +350,7 @@ void Player::checkFall(float delta){
         if(Platform->find({x,z})==Platform->end() ||Platform->find({x+size,z})==Platform->end() )
         {
             inFall=true;
+            angle=0;
         }
     }
     else
@@ -274,6 +358,7 @@ void Player::checkFall(float delta){
         if(Platform->find({x,z})==Platform->end()||Platform->find({x,z-size})==Platform->end())
         {
             inFall=true;
+            angle=0;
         }
     }
 }
