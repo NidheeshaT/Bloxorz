@@ -22,16 +22,8 @@ int z_near = 50;
 int z_far = 800;
 float light_position[] = {0, 600, -600, 1};
 float light_color[] = {1, 0.7, 0.2};
-struct hash_pair {
-    template<class T1, class T2>
-    size_t operator()(const std::pair<T1, T2>& p) const {
-        auto hash1 = std::hash<T1>{}(p.first);
-        auto hash2 = std::hash<T2>{}(p.second);
-        return hash1 ^ hash2;
-    }
-};
 GLuint texture, sun;
-unordered_map<pair<int,int>,PlatformCube*,hash_pair> Platform;
+unordered_map<pair<int,int>,PlatformCube*,hash_pair>* Platform=new unordered_map<pair<int,int>,PlatformCube*,hash_pair>();
 Player *P;
 
 enum Scene
@@ -154,14 +146,14 @@ void createPlatformFromTextFile(const char *fileName, GLfloat cubeSize, GLuint t
                 if (c == 'o')
                 {
                     cube=new PlatformCube(x, y, z, cubeSize, texture);
-                    Platform.insert({{x,z},cube});
+                    Platform->insert({{x,z},cube});
                 }
                 else if (c == 'S')
                 {
                     cube=new PlatformCube(x, y, z, cubeSize, texture);
-                    P=new Player(x, cubeSize+cubeSize/2, z, cubeSize, 0);
+                    P=new Player(x, cubeSize+cubeSize/2, z, cubeSize, 0,Platform);
                     glutSpecialFunc(key_detect);
-                    Platform.insert({{x,z},cube});
+                    Platform->insert({{x,z},cube});
                 }
                 x += cubeSize;
             }
@@ -173,7 +165,7 @@ void createPlatformFromTextFile(const char *fileName, GLfloat cubeSize, GLuint t
 }
 void renderGame(float delta){
     P->render(delta);
-    for(auto p=Platform.begin();p!=Platform.end();p++){
+    for(auto p=Platform->begin();p!=Platform->end();p++){
         p->second->render();
     }
 }

@@ -1,8 +1,10 @@
 #include<GLUT/glut.h>
 #include "../headers/Player.hpp"
+#include "../headers/PlatformCube.hpp"
 #include "../headers/utilities.hpp"
+using namespace std;
 
-Player::Player(GLfloat x,GLfloat y,GLfloat z,GLfloat size,GLuint texture){
+Player::Player(GLfloat x,GLfloat y,GLfloat z,GLfloat size,GLuint texture,std::unordered_map<std::pair<int,int>,PlatformCube*,hash_pair>*Platform){
     this->x=x;
     this->y=y;
     this->z=z;
@@ -10,14 +12,15 @@ Player::Player(GLfloat x,GLfloat y,GLfloat z,GLfloat size,GLuint texture){
     this->texture=texture;
     this->inFall=false;
     this->inMovement=false;
-    this->orientation=HORIZONTAL_Z;
+    this->orientation=VERTICAL;
+    this->Platform=Platform;
     render(0);
 }
-
 void Player::render(float delta){
     glPushMatrix();
         glBindTexture(GL_TEXTURE_2D, texture);
         glTranslatef(x, y, z);
+        checkFall(delta);
         this->movement(delta);
         this->orient();
         glScalef(size / 2, size / 2, size / 2);
@@ -27,7 +30,7 @@ void Player::render(float delta){
 }
 
 void Player::key_detect(int ch, int x, int y){
-    if(inMovement){
+    if(inMovement || inFall){
         return;
     }
     else{
@@ -61,6 +64,8 @@ void Player::orient(){
 }
 
 void Player::movement(float delta){
+    if(inFall)
+        return;
     if(!inMovement)
         return;
     
@@ -232,6 +237,43 @@ void Player::movement(float delta){
             glTranslatef(0,-size,-2*size+size/2);
             glRotatef(angle,1,0,0);
             glTranslatef(0,size,2*size-size/2);
+        }
+    }
+}
+
+void Player::checkFall(float delta){
+    if(Platform->empty())
+        return;
+    if(y<=bottomLimit)
+        return;
+    if(inFall){
+        // if(orientation==VERTICAL){
+            y-=fallSpeed*delta;
+            if(y<=bottomLimit){
+                inFall=false;
+            }
+        // }
+        return;
+    }
+    if(orientation==VERTICAL)
+    {
+        if(Platform->find({x,z})==Platform->end())
+        {
+            inFall=true;
+        }
+    }
+    else if(orientation==HORIZONTAL_X)
+    {
+        if(Platform->find({x,z})==Platform->end() ||Platform->find({x+size,z})==Platform->end() )
+        {
+            inFall=true;
+        }
+    }
+    else
+    {
+        if(Platform->find({x,z})==Platform->end()||Platform->find({x,z-size})==Platform->end())
+        {
+            inFall=true;
         }
     }
 }
