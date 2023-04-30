@@ -26,10 +26,11 @@ int z_near = 50;
 int z_far = 800;
 float light_position[] = {0, 400, -400, 1};
 float light_color[] = {1, 0.7, 0.2};
-GLuint texture, sun, stars;
+GLuint texture, sun, stars,gold;
 unordered_map<pair<int, int>, PlatformCube *, hash_pair> *Platform = new unordered_map<pair<int, int>, PlatformCube *, hash_pair>();
 Player *P;
 int targetX,targetZ;
+float red=1.0,green=0,blue=0;
 
 enum Scene
 {
@@ -112,6 +113,16 @@ void material_white()
     glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 120.0f);
     glMaterialfv(GL_FRONT, GL_EMISSION, disable);
 }
+void material(float red,float green,float blue)
+{
+    float color[] = {red, blue, green, 1};
+    float disable[] = {0, 0, 0, 0};
+    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, color);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, color);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, color);
+    glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 120.0f);
+    glMaterialfv(GL_FRONT, GL_EMISSION, disable);
+}
 
 void material_emissive()
 {
@@ -151,6 +162,7 @@ void init()
     texture = loadBMPTexture("assets/bricks.bmp");
     sun = loadBMPTexture("assets/2k_sun.bmp");
     stars = loadBMPTexture("assets/stars.bmp");
+    gold = loadBMPTexture("assets/gold.bmp");
     menuProjection();
 }
 
@@ -186,7 +198,8 @@ void createPlatformFromTextFile(const char *fileName, GLfloat cubeSize, GLuint t
                 else if(c=='T'){
                     targetX=x;
                     targetZ=z;
-                    Platform->insert({{x,z},nullptr});
+                    cube=new PlatformCube(x, y, z, cubeSize, gold);
+                    Platform->insert({{x,z},cube});
                 }
                 x += cubeSize;
             }
@@ -199,10 +212,54 @@ void createPlatformFromTextFile(const char *fileName, GLfloat cubeSize, GLuint t
         file.close();
     }
 }
+void renderColor(){
+    if(red==1 && green!=1){
+        if(blue>0)
+        {
+            blue-=delta/2;
+            if(blue<=0)
+                blue=0;
+        }
+        else{
+            green+=delta/2;
+            if(green>=1)
+                green=1;
+        }
+    }
+    else if(green==1 && blue!=1){
+        if(red>0)
+        {
+            red-=delta/2;
+            if(red<=0)
+                red=0;
+        }
+        else{
+            blue+=delta/2;
+            if(blue>=1)
+                blue=1;
+        }
+    }
+    else if(blue==1 && red!=1){
+        if(green>0)
+        {
+            green-=delta/2;
+            if(green<=0)
+                green=0;
+        }
+        else{
+            red+=delta/2;
+            if(red>=1)
+                red=1;
+        }
+    }
+}
 
 void renderGame(float delta)
 {
+    renderColor();
+    material(red,green,blue);
     P->render(delta);
+    material_white();
     for(auto p=Platform->begin();p!=Platform->end();p++){
         if(p->second!=nullptr)
             p->second->render();
@@ -321,7 +378,7 @@ void gameScreen(float delta)
 {
     glBindTexture(GL_TEXTURE_2D, 0);
     camera(cameraRadius, angleX, angleY);
-    light(light_position, light_color, 0.6, 0.3, 1);
+    light(light_position, light_color, 0.6, 0.4, 1);
     glPushMatrix();
         material_emissive_white();
         glBindTexture(GL_TEXTURE_2D, stars);
