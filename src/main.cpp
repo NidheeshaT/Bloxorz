@@ -177,7 +177,9 @@ void createPlatformFromTextFile(const char *fileName, GLfloat cubeSize, GLuint t
                 else if (c == 'S')
                 {
                     cube=new PlatformCube(x, y, z, cubeSize, texture);
-                    P=new Player(x, cubeSize+cubeSize/2, z, cubeSize, 0,Platform);
+                    px=x;
+                    py=cubeSize+cubeSize/2;
+                    pz=z;
                     glutSpecialFunc(key_detect);
                     Platform->insert({{x, z}, cube});
                 }
@@ -202,7 +204,8 @@ void renderGame(float delta)
 {
     P->render(delta);
     for(auto p=Platform->begin();p!=Platform->end();p++){
-        p->second->render();
+        if(p->second!=nullptr)
+            p->second->render();
     }
     // Check if the player has fallen off
     if (P->inFall)
@@ -340,7 +343,7 @@ void gameScreen(float delta)
         renderGame(delta);
     }
     glPopMatrix();
-    drawString("Press P to Pause", 0.0f, -250.0f, GLUT_BITMAP_HELVETICA_12);
+    // drawString("Press P to Pause", 0.0f, -250.0f, GLUT_BITMAP_HELVETICA_12);
 }
 
 void endScreen()
