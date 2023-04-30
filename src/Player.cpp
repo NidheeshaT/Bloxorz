@@ -10,7 +10,7 @@ Player::Player(GLfloat x,GLfloat y,GLfloat z,GLfloat size,GLuint texture){
     this->texture=texture;
     this->inFall=false;
     this->inMovement=false;
-    this->orientation=VERTICAL;
+    this->orientation=HORIZONTAL_Z;
     render(0);
 }
 
@@ -18,8 +18,8 @@ void Player::render(float delta){
     glPushMatrix();
         glBindTexture(GL_TEXTURE_2D, texture);
         glTranslatef(x, y, z);
-        this->orient();
         this->movement(delta);
+        this->orient();
         glScalef(size / 2, size / 2, size / 2);
         drawCuboid();
         glBindTexture(GL_TEXTURE_2D, 0);
@@ -72,6 +72,8 @@ void Player::movement(float delta){
                 inMovement=false;
                 orientation=HORIZONTAL_X;
                 x+=size;
+                glTranslatef(size,0,0);
+                return;
             }
             glTranslatef(size/2,-size,0);
             glRotatef(angle,0,0,1);
@@ -84,6 +86,8 @@ void Player::movement(float delta){
                 inMovement=false;
                 orientation=HORIZONTAL_X;
                 x-=2*size;
+                glTranslatef(-2*size,0,0);
+                return;
             }
             glTranslatef(-size/2,-size,0);
             glRotatef(angle,0,0,1);
@@ -96,6 +100,8 @@ void Player::movement(float delta){
                 inMovement=false;
                 orientation=HORIZONTAL_Z;
                 z+=2*size;
+                glTranslatef(0,0,2*size);
+                return;
             }
             glTranslatef(0,-size,size/2);
             glRotatef(angle,1,0,0);
@@ -108,24 +114,124 @@ void Player::movement(float delta){
                 inMovement=false;
                 orientation=HORIZONTAL_Z;
                 z-=size;
+                glTranslatef(0,0,-size);
+                return;
             }
             glTranslatef(0,-size,-size/2);
             glRotatef(angle,1,0,0);
             glTranslatef(0,size,size/2);
         }
     }
-    // else if(orientation==HORIZONTAL_X){
-    //     if(m==RIGHT){
-    //         angle-=speed*delta;
-    //         if(angle<=-90){
-    //             angle=-90;
-    //             inMovement=false;
-    //             orientation=HORIZONTAL_X;
-    //             x+=size;
-    //         }
-    //         glTranslatef(3*size/2,-size/2,0);
-    //         glRotatef(angle,0,0,1);
-    //         glTranslatef(-3*size/2,size/2,0);
-    //     }
-    // }
+    else if(orientation==HORIZONTAL_X){
+        if(m==RIGHT){
+            angle-=speed*delta;
+            if(angle<=-90){
+                angle=-90;
+                inMovement=false;
+                orientation=VERTICAL;
+                x+=2*size;
+                glTranslatef(2*size,0,0);
+                return;
+            }
+            glTranslatef(size+size/2,-size,0);
+            glRotatef(angle,0,0,1);
+            glTranslatef(-size-size/2,size,0);
+        }
+        if(m==LEFT){
+            angle+=speed*delta;
+            if(angle>=90){
+                angle=90;
+                inMovement=false;
+                orientation=VERTICAL;
+                x-=size;
+                glTranslatef(-size,0,0);
+                return;
+            }
+            glTranslatef(-size+size/2,-size,0);
+            glRotatef(angle,0,0,1);
+            glTranslatef(+size-size/2,size,0);
+        }
+        if(m==FRONT){
+            angle+=speed*delta;
+            if(angle>=90){
+                angle=90;
+                inMovement=false;
+                z+=size;
+                glTranslatef(0,0,size);
+                return;
+            }
+            glTranslatef(0,-size,size/2);
+            glRotatef(angle,1,0,0);
+            glTranslatef(0,size,-size/2);
+        }
+        if(m==BACK){
+            angle-=speed*delta;
+            if(angle<=-90){
+                angle=-90;
+                inMovement=false;
+                z-=size;
+                glTranslatef(0,0,-size);
+                return;
+            }
+            glTranslatef(0,-size,-size/2);
+            glRotatef(angle,1,0,0);
+            glTranslatef(0,size,size/2);
+        }
+    }
+    else if(orientation==HORIZONTAL_Z){
+        if(m==RIGHT){
+            angle-=speed*delta;
+            if(angle<=-90){
+                angle=-90;
+                inMovement=false;
+                x+=size;
+                glTranslatef(size,0,0);
+                return;
+            }
+            glTranslatef(size/2,-size,size+size/2);
+            glRotatef(angle,0,0,1);
+            glTranslatef(-size/2,size,-size-size/2);
+        }
+        if(m==LEFT){
+            angle+=speed*delta;
+            if(angle>=90){
+                angle=90;
+                inMovement=false;
+                x-=size;
+                glTranslatef(-size,0,0);
+                return;
+            }
+            glTranslatef(-size/2,-size,-size+size/2);
+            glRotatef(angle,0,0,1);
+            glTranslatef(size/2,size,size-size/2);
+        }
+        if(m==FRONT){
+            angle+=speed*delta;
+            if(angle>=90){
+                angle=90;
+                inMovement=false;
+                orientation=VERTICAL;
+                z+=size;
+                glTranslatef(0,0,size);
+                return;
+            }
+            glTranslatef(0,-size,size/2);
+            glRotatef(angle,1,0,0);
+            glTranslatef(0,size,-size/2);
+        }
+        if(m==BACK){
+            angle-=speed*delta;
+            if(angle<=-90){
+                angle=-90;
+                inMovement=false;
+                orientation=VERTICAL;
+                z-=2*size;
+                glTranslatef(0,0,-2*size);
+                return;
+            }
+            glTranslatef(0,-size,-2*size+size/2);
+            glRotatef(angle,1,0,0);
+            glTranslatef(0,size,2*size-size/2);
+        }
+    }
 }
