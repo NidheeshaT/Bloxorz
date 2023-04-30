@@ -19,6 +19,7 @@ public:
     float bottomLimit=-300;
     int targetX;
     int targetZ;
+    int level;
     std::unordered_map<std::pair<int,int>,PlatformCube*,hash_pair>*Platform;
 
 

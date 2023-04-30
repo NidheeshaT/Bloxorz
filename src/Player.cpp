@@ -14,6 +14,7 @@ Player::Player(GLfloat x,GLfloat y,GLfloat z,GLfloat size,GLuint texture,std::un
     this->inMovement=false;
     this->orientation=VERTICAL;
     this->Platform=Platform;
+    this->level=1;
     render(0);
 }
 void Player::render(float delta){

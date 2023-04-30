@@ -17,6 +17,10 @@ int angle = 0;
 
 float gameOverTimer = 0.0f;
 const float GAME_OVER_DELAY = 2.0f;
+float victoryTimer = 0.0f;
+const float VICTORY_DELAY = 3.0f;
+bool continueClicked = false;
+
 int cameraLookX=0,cameraLookY=0,cameraLookZ=0;
 float delta;
 
@@ -393,7 +397,12 @@ void gameScreen(float delta)
     if (changedToGame)
     {
         changedToGame = false;
-        createPlatformFromTextFile("./maps/l1.txt", 40, texture);
+        if(P!=nullptr){
+            string path = "./maps/l" + to_string(P->level) + ".txt";
+            createPlatformFromTextFile(path.c_str(), 40, texture);
+        } else {
+            createPlatformFromTextFile("./maps/l1.txt", 40, texture);
+        }
     }
     else
     {
@@ -439,6 +448,36 @@ void endScreen()
 
 void victoryScreen()
 {
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    gluOrtho2D(0, glutGet(GLUT_WINDOW_WIDTH), 0, glutGet(GLUT_WINDOW_HEIGHT));
+    glMatrixMode(GL_MODELVIEW);
+
+    // Disable lighting so text is not affected by lighting
+    glDisable(GL_LIGHTING);
+
+    glClear(GL_COLOR_BUFFER_BIT);
+    glPushMatrix();
+
+    // Draw button
+    int y = glutGet(GLUT_WINDOW_HEIGHT) / 2 + 50;
+    int buttonWidth = 200;
+    int buttonHeight = 50;
+    int buttonX = (glutGet(GLUT_WINDOW_WIDTH) - buttonWidth) / 2;
+    int buttonY = y - 80;
+    drawButton("Continue", buttonX, buttonY, buttonWidth, buttonHeight, GLUT_BITMAP_TIMES_ROMAN_24);
+
+    glColor3f(1.0, 1.0, 1.0);
+    const char *text = "You won!";
+    int X = (glutGet(GLUT_WINDOW_WIDTH) - glutBitmapLength(GLUT_BITMAP_HELVETICA_12, (const unsigned char *)text)) / 2.3;
+    int Y = buttonY - 50;
+    void *font = GLUT_BITMAP_TIMES_ROMAN_24;
+    drawString(text, X, Y, font);
+
+    glPopMatrix();
+
+    // Re-enable lighting and depth test
+    glEnable(GL_LIGHTING);
 }
 
 // 5. render the scene
@@ -450,26 +489,34 @@ void display()
 
     glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
     glLoadIdentity();
-    if (scene == MENU)
-    {
+    if(continueClicked){
+        scene = GAME;
+        continueClicked = false;
+    } else if(P!=nullptr && P->inTarget){
+        victoryTimer += delta;
+        if (victoryTimer >= VICTORY_DELAY)
+        {
+            scene = VICTORY;
+            victoryTimer = 0;
+        }
+    }
+
+    if (scene == MENU){
         menuScreen();
     }
-    else if (scene == PAUSE)
-    {
+    else if (scene == PAUSE){
         pauseScreen();
     }
-    else if (scene == GAME)
-    {
+    else if (scene == GAME){
         gameScreen(delta);
     }
-    else if (scene == GAMEOVER)
-    {
+    else if (scene == GAMEOVER){
         endScreen();
-    }
-    else
-    {
+    } 
+    else if (scene == VICTORY){
         victoryScreen();
     }
+
     glutSwapBuffers();
     glFlush();
 }
@@ -501,6 +548,13 @@ void mouse(int button, int state, int x, int y)
         else if (scene == GAMEOVER || scene == MENU && x >= buttonX && x <= buttonX + buttonWidth &&
                                           y >= buttonY && y <= buttonY + buttonHeight)
         {
+            scene = GAME;
+            changedToGame = true;
+            gameProjection();
+        } else if(scene == VICTORY && x >= buttonX && x <= buttonX + buttonWidth &&
+                                          y >= buttonY && y <= buttonY + buttonHeight){
+            continueClicked = true;
+            P->level++;
             scene = GAME;
             changedToGame = true;
             gameProjection();
