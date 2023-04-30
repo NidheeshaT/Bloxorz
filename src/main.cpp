@@ -22,9 +22,9 @@ int windowWidth = 100;
 int windowHeight = 100;
 int z_near = 50;
 int z_far = 800;
-float light_position[] = {0, 600, -600, 1};
+float light_position[] = {0, 400, -400, 1};
 float light_color[] = {1, 0.7, 0.2};
-GLuint texture, sun;
+GLuint texture, sun,stars;
 unordered_map<pair<int,int>,PlatformCube*,hash_pair>* Platform=new unordered_map<pair<int,int>,PlatformCube*,hash_pair>();
 Player *P;
 int targetX,targetZ;
@@ -122,7 +122,7 @@ void material_emissive()
 void material_emissive_white()
 {
     float disable[] = {0, 0, 0, 0};
-    GLfloat mat_emission[] = {1, 0.8, 2, 1.0};
+    GLfloat mat_emission[] = {1, 1, 1, 1.0};
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, disable);
     glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, disable);
     glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, disable);
@@ -146,6 +146,7 @@ void init()
     glEnable(GL_NORMALIZE);
     texture = loadBMPTexture("assets/bricks.bmp");
     sun = loadBMPTexture("assets/2k_sun.bmp");
+    stars = loadBMPTexture("assets/stars.bmp");
     menuProjection();
 }
 
@@ -302,6 +303,15 @@ void gameScreen(float delta)
     glBindTexture(GL_TEXTURE_2D, 0);
     camera(cameraRadius, angleX, angleY);
     light(light_position, light_color, 0.6, 0.3, 1);
+    glPushMatrix();
+        material_emissive_white();
+        glBindTexture(GL_TEXTURE_2D, stars);
+        GLUquadricObj *sphere = gluNewQuadric();
+        gluQuadricTexture(sphere, GL_TRUE);
+        gluQuadricNormals(sphere, GLU_SMOOTH);
+        gluSphere(sphere, 500.0, 100, 100);
+        gluDeleteQuadric(sphere);
+    glPopMatrix();
     glPushMatrix();
     material_white();
     if(changedToGame){
