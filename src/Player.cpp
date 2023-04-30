@@ -20,6 +20,7 @@ void Player::render(float delta){
     glPushMatrix();
         glBindTexture(GL_TEXTURE_2D, texture);
         glTranslatef(x, y, z);
+        checkTarget(delta);
         checkFall(delta);
         this->movement(delta);
         this->orient();
@@ -30,7 +31,7 @@ void Player::render(float delta){
 }
 
 void Player::key_detect(int ch, int x, int y){
-    if(inMovement || inFall){
+    if(inMovement || inFall ||inTarget){
         return;
     }
     else{
@@ -64,9 +65,7 @@ void Player::orient(){
 }
 
 void Player::movement(float delta){
-    if(inFall)
-        return;
-    if(!inMovement)
+    if(inFall||inTarget||!inMovement)
         return;
     
     if(orientation==VERTICAL){
@@ -242,6 +241,8 @@ void Player::movement(float delta){
 }
 
 void Player::checkFall(float delta){
+    if(inTarget)
+        return;
     if(Platform->empty())
         return;
     if(y<=bottomLimit)
@@ -360,5 +361,21 @@ void Player::checkFall(float delta){
             inFall=true;
             angle=0;
         }
+    }
+}
+
+void Player::checkTarget(float delta){
+    if(inTarget){
+        angle+=200*delta;
+        if(angle>=360)
+            angle=0;
+        
+        glTranslatef(0,size/4 + abs(int(angle)-180)/180.0*size/2,0);
+        glRotatef(angle,0,1,0);
+        return;
+    }
+    if(orientation==VERTICAL && targetX==x && targetZ==z){
+        inTarget=true;
+        angle=0;
     }
 }

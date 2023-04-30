@@ -11,10 +11,12 @@ unsigned int prevTime = 0;
 
 
 using namespace std;
-float cameraRadius = 300;
+float cameraRadius = 250;
 int angleX = 0;
 int angleY = 0;
 int angle = 0;
+int cameraLookX=0,cameraLookY=0,cameraLookZ=0;
+float delta;
 
 int windowWidth = 100;
 int windowHeight = 100;
@@ -25,6 +27,7 @@ float light_color[] = {1, 0.7, 0.2};
 GLuint texture, sun;
 unordered_map<pair<int,int>,PlatformCube*,hash_pair>* Platform=new unordered_map<pair<int,int>,PlatformCube*,hash_pair>();
 Player *P;
+int targetX,targetZ;
 
 enum Scene
 {
@@ -41,12 +44,28 @@ void key_detect(int ch,int x,int y);
 void camera(float cameraRadius, int angleX, int angleY)
 {
     GLdouble cameraX, cameraY, cameraZ;
+
     cameraY = sin(PI * angleX / 180) * cameraRadius;
     cameraZ = cos(PI * angleX / 180) * cameraRadius;
 
     cameraX = sin(PI * angleY / 180) * cameraZ;
     cameraZ = cos(PI * angleY / 180) * cameraZ;
-    gluLookAt(cameraX, cameraY, cameraZ, 0, 0, 0, 0, cos(PI * angleX / 180), 0);
+    if(P!=nullptr){
+        if(abs(cameraLookX-P->x)<=abs((P->x-cameraLookX)*delta)){
+            cameraLookX=P->x;
+        }
+        else{
+            cameraLookX+=(P->x-cameraLookX)*delta;
+        }
+        // cameraLookY=P->y;
+        if(abs(cameraLookZ-P->z)<=abs((P->z-cameraLookZ)*delta)){
+            cameraLookZ=P->z;
+        }
+        else{
+            cameraLookZ+=(P->z-cameraLookZ)*delta;
+        }
+    }
+    gluLookAt(cameraX+cameraLookX, cameraY+cameraLookY, cameraZ+cameraLookZ, cameraLookX,cameraLookY,cameraLookZ, 0, cos(PI * angleX / 180), 0);
 }
 void material_white();
 void material_emissive();
@@ -159,11 +178,18 @@ void createPlatformFromTextFile(const char *fileName, GLfloat cubeSize, GLuint t
                     glutSpecialFunc(key_detect);
                     Platform->insert({{x,z},cube});
                 }
+                else if(c=='T'){
+                    targetX=x;
+                    targetZ=z;
+                    Platform->insert({{x,z},nullptr});
+                }
                 x += cubeSize;
             }
             z -= cubeSize;
             x = 0;
             P=new Player(px,py , pz, cubeSize, 0,Platform);
+            P->targetX=targetX;
+            P->targetZ=targetZ;
         }
         file.close();
     }
@@ -171,7 +197,8 @@ void createPlatformFromTextFile(const char *fileName, GLfloat cubeSize, GLuint t
 void renderGame(float delta){
     P->render(delta);
     for(auto p=Platform->begin();p!=Platform->end();p++){
-        p->second->render();
+        if(p->second!=nullptr)
+            p->second->render();
     }
 }
 void drawString(const char *str, float x, float y, void *font)
@@ -295,7 +322,7 @@ void endScreen()
 void display()
 {
     unsigned int currTime = glutGet(GLUT_ELAPSED_TIME);
-    float delta = (float)(currTime - prevTime) / 1000.0f;
+    delta = (float)(currTime - prevTime) / 1000.0f;
     prevTime = currTime;
 
     glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);

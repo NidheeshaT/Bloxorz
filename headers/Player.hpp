@@ -12,10 +12,13 @@ public:
     GLuint texture;
     bool inMovement;
     bool inFall;
+    bool inTarget;
     float angle=0.0;
     int speed=180;
     int fallSpeed=100;
     float bottomLimit=-300;
+    int targetX;
+    int targetZ;
     std::unordered_map<std::pair<int,int>,PlatformCube*,hash_pair>*Platform;
 
 
@@ -30,6 +33,7 @@ public:
     void orient();
     void movement(float delta);
     void checkFall(float delta);
+    void checkTarget(float delta);
 
 };
 
