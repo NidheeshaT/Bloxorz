@@ -1,6 +1,6 @@
 #include "GLUT/glut.h"
 #include <iostream>
-#include<unordered_map>
+#include <unordered_map>
 #include <fstream>
 #include <math.h>
 #include "../headers/utilities.hpp"
@@ -9,12 +9,14 @@
 #define PI 3.14159265
 unsigned int prevTime = 0;
 
-
 using namespace std;
 float cameraRadius = 250;
 int angleX = 0;
 int angleY = 0;
 int angle = 0;
+
+float gameOverTimer = 0.0f;
+const float GAME_OVER_DELAY = 2.0f;
 int cameraLookX=0,cameraLookY=0,cameraLookZ=0;
 float delta;
 
@@ -24,8 +26,8 @@ int z_near = 50;
 int z_far = 800;
 float light_position[] = {0, 400, -400, 1};
 float light_color[] = {1, 0.7, 0.2};
-GLuint texture, sun,stars;
-unordered_map<pair<int,int>,PlatformCube*,hash_pair>* Platform=new unordered_map<pair<int,int>,PlatformCube*,hash_pair>();
+GLuint texture, sun, stars;
+unordered_map<pair<int, int>, PlatformCube *, hash_pair> *Platform = new unordered_map<pair<int, int>, PlatformCube *, hash_pair>();
 Player *P;
 int targetX,targetZ;
 
@@ -34,12 +36,13 @@ enum Scene
     MENU,
     PAUSE,
     GAME,
-    GAMEOVER
+    GAMEOVER,
+    VICTORY
 };
 
 Scene scene = MENU;
-bool changedToGame=false;
-void key_detect(int ch,int x,int y);
+bool changedToGame = false;
+void key_detect(int ch, int x, int y);
 
 void camera(float cameraRadius, int angleX, int angleY)
 {
@@ -128,7 +131,8 @@ void material_emissive_white()
     glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, disable);
     glMaterialfv(GL_FRONT, GL_EMISSION, mat_emission);
 }
-void menuProjection(){
+void menuProjection()
+{
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     gluOrtho2D(0, glutGet(GLUT_WINDOW_WIDTH), 0, glutGet(GLUT_WINDOW_HEIGHT));
@@ -167,17 +171,15 @@ void createPlatformFromTextFile(const char *fileName, GLfloat cubeSize, GLuint t
                 char c = line[i];
                 if (c == 'o')
                 {
-                    cube=new PlatformCube(x, y, z, cubeSize, texture);
-                    Platform->insert({{x,z},cube});
+                    cube = new PlatformCube(x, y, z, cubeSize, texture);
+                    Platform->insert({{x, z}, cube});
                 }
                 else if (c == 'S')
                 {
                     cube=new PlatformCube(x, y, z, cubeSize, texture);
-                    px=x;
-                    py=cubeSize+cubeSize/2;
-                    pz=z;
+                    P=new Player(x, cubeSize+cubeSize/2, z, cubeSize, 0,Platform);
                     glutSpecialFunc(key_detect);
-                    Platform->insert({{x,z},cube});
+                    Platform->insert({{x, z}, cube});
                 }
                 else if(c=='T'){
                     targetX=x;
@@ -195,11 +197,25 @@ void createPlatformFromTextFile(const char *fileName, GLfloat cubeSize, GLuint t
         file.close();
     }
 }
-void renderGame(float delta){
+
+void renderGame(float delta)
+{
     P->render(delta);
     for(auto p=Platform->begin();p!=Platform->end();p++){
-        if(p->second!=nullptr)
-            p->second->render();
+        p->second->render();
+    }
+    // Check if the player has fallen off
+    if (P->inFall)
+    {
+        gameOverTimer += delta;
+        if (gameOverTimer >= GAME_OVER_DELAY)
+        {
+            scene = GAMEOVER;
+        }
+    }
+    else
+    {
+        gameOverTimer = 0;
     }
 }
 void drawString(const char *str, float x, float y, void *font)
@@ -270,10 +286,10 @@ void pauseScreen()
     glLoadIdentity();
     gluOrtho2D(0, glutGet(GLUT_WINDOW_WIDTH), 0, glutGet(GLUT_WINDOW_HEIGHT));
     glMatrixMode(GL_MODELVIEW);
-    
+
     // Disable lighting so text is not affected by lighting
     glDisable(GL_LIGHTING);
-        
+
     glClear(GL_COLOR_BUFFER_BIT);
     glPushMatrix();
 
@@ -286,14 +302,14 @@ void pauseScreen()
     drawButton("Resume", buttonX, buttonY, buttonWidth, buttonHeight, GLUT_BITMAP_TIMES_ROMAN_24);
 
     glColor3f(1.0, 1.0, 1.0);
-    const char *text = "PAUSED"; 
+    const char *text = "PAUSED";
     int X = (glutGet(GLUT_WINDOW_WIDTH) - glutBitmapLength(GLUT_BITMAP_HELVETICA_12, (const unsigned char *)text)) / 2.3;
     int Y = buttonY - 50;
     void *font = GLUT_BITMAP_TIMES_ROMAN_24;
     drawString(text, X, Y, font);
 
     glPopMatrix();
-    
+
     // Re-enable lighting and depth test
     glEnable(GL_LIGHTING);
 }
@@ -314,17 +330,54 @@ void gameScreen(float delta)
     glPopMatrix();
     glPushMatrix();
     material_white();
-    if(changedToGame){
-        changedToGame=false;
+    if (changedToGame)
+    {
+        changedToGame = false;
         createPlatformFromTextFile("./maps/l1.txt", 40, texture);
     }
-    else{
+    else
+    {
         renderGame(delta);
     }
     glPopMatrix();
+    drawString("Press P to Pause", 0.0f, -250.0f, GLUT_BITMAP_HELVETICA_12);
 }
 
 void endScreen()
+{
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    gluOrtho2D(0, glutGet(GLUT_WINDOW_WIDTH), 0, glutGet(GLUT_WINDOW_HEIGHT));
+    glMatrixMode(GL_MODELVIEW);
+
+    // Disable lighting so text is not affected by lighting
+    glDisable(GL_LIGHTING);
+
+    glClear(GL_COLOR_BUFFER_BIT);
+    glPushMatrix();
+
+    // Draw button
+    int y = glutGet(GLUT_WINDOW_HEIGHT) / 2 + 50;
+    int buttonWidth = 200;
+    int buttonHeight = 50;
+    int buttonX = (glutGet(GLUT_WINDOW_WIDTH) - buttonWidth) / 2;
+    int buttonY = y - 80;
+    drawButton("Restart", buttonX, buttonY, buttonWidth, buttonHeight, GLUT_BITMAP_TIMES_ROMAN_24);
+
+    glColor3f(1.0, 1.0, 1.0);
+    const char *text = "Game Over!";
+    int X = (glutGet(GLUT_WINDOW_WIDTH) - glutBitmapLength(GLUT_BITMAP_HELVETICA_12, (const unsigned char *)text)) / 2.3;
+    int Y = buttonY - 50;
+    void *font = GLUT_BITMAP_TIMES_ROMAN_24;
+    drawString(text, X, Y, font);
+
+    glPopMatrix();
+
+    // Re-enable lighting and depth test
+    glEnable(GL_LIGHTING);
+}
+
+void victoryScreen()
 {
 }
 
@@ -349,15 +402,20 @@ void display()
     {
         gameScreen(delta);
     }
-    else
+    else if (scene == GAMEOVER)
     {
         endScreen();
+    }
+    else
+    {
+        victoryScreen();
     }
     glutSwapBuffers();
     glFlush();
 }
 
-void gameProjection(){
+void gameProjection()
+{
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     glFrustum(windowWidth / -2, windowWidth / 2, windowHeight / -2, windowHeight / 2, z_near, z_far);
@@ -373,9 +431,15 @@ void mouse(int button, int state, int x, int y)
         int buttonX = (glutGet(GLUT_WINDOW_WIDTH) - buttonWidth) / 2;
         int buttonY = glutGet(GLUT_WINDOW_HEIGHT) / 2 + 50 - 80;
 
-        // Check if the mouse click is inside the button area
-        if (x >= buttonX && x <= buttonX + buttonWidth &&
+        if (scene == PAUSE && x >= buttonX && x <= buttonX + buttonWidth &&
             y >= buttonY && y <= buttonY + buttonHeight)
+        {
+            scene = GAME;
+            changedToGame = false;
+            gameProjection();
+        }
+        else if (scene == GAMEOVER || scene == MENU && x >= buttonX && x <= buttonX + buttonWidth &&
+                                          y >= buttonY && y <= buttonY + buttonHeight)
         {
             scene = GAME;
             changedToGame = true;
@@ -390,10 +454,12 @@ void reshape(int w, int h)
     int x = (w > h ? (w - min(w, h)) / 2 : 0);
     int y = (h > w ? (h - min(w, h)) / 2 : 0);
     glViewport(x, y, min(w, h), min(w, h));
-    if(scene == MENU){
+    if (scene == MENU)
+    {
         menuProjection();
     }
-    else{
+    else
+    {
         gameProjection();
     }
 }
@@ -418,7 +484,7 @@ void keyboard(unsigned char ch, int x, int y)
         angleY = (angleY + 10) % 360;
     else if (ch == 'a')
         angleY = (angleY - 10) % 360;
-        
+
     if (ch == 'p' || ch == 'P')
     {
         if (scene == GAME)
@@ -426,9 +492,9 @@ void keyboard(unsigned char ch, int x, int y)
     }
 }
 
-
-void key_detect(int ch,int x,int y){
-    P->key_detect(ch,x,y);
+void key_detect(int ch, int x, int y)
+{
+    P->key_detect(ch, x, y);
 }
 
 // 9. initializes GLUT and starts the program loop
