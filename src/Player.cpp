@@ -14,7 +14,7 @@ Player::Player(GLfloat x,GLfloat y,GLfloat z,GLfloat size,GLuint texture,std::un
     this->inMovement=false;
     this->orientation=VERTICAL;
     this->Platform=Platform;
-    this->level=1;
+    moves=0;
     render(0);
 }
 void Player::render(float delta){
@@ -35,21 +35,29 @@ void Player::key_detect(int ch, int x, int y){
     if(inMovement || inFall ||inTarget){
         return;
     }
-    else{
-        inMovement=true;
-        angle=0;
-    }
     if(ch==GLUT_KEY_UP){
         this->m=BACK;
+        inMovement=true;
+        angle=0;
+        moves++;
     }
     if(ch==GLUT_KEY_DOWN){
         this->m=FRONT;
+        inMovement=true;
+        angle=0;
+        moves++;
     }
     if(ch==GLUT_KEY_RIGHT){
         this->m=RIGHT;
+        inMovement=true;
+        angle=0;
+        moves++;
     }
     if(ch==GLUT_KEY_LEFT){
         this->m=LEFT;
+        inMovement=true;
+        angle=0;
+        moves++;
     }
 }
 

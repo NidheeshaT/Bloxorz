@@ -11,7 +11,7 @@ unsigned int prevTime = 0;
 
 using namespace std;
 float cameraRadius = 250;
-int angleX = 0;
+int angleX = 60;
 int angleY = 0;
 int angle = 0;
 
@@ -30,6 +30,7 @@ int z_near = 50;
 int z_far = 800;
 float light_position[] = {0, 400, -400, 1};
 float light_color[] = {1, 0.7, 0.2};
+int level=1;
 GLuint texture, sun, stars,gold;
 unordered_map<pair<int, int>, PlatformCube *, hash_pair> *Platform = new unordered_map<pair<int, int>, PlatformCube *, hash_pair>();
 Player *P;
@@ -74,6 +75,7 @@ void camera(float cameraRadius, int angleX, int angleY)
         }
     }
     gluLookAt(cameraX+cameraLookX, cameraY+cameraLookY, cameraZ+cameraLookZ, cameraLookX,cameraLookY,cameraLookZ, 0, cos(PI * angleX / 180), 0);
+
 }
 void material_white();
 void material_emissive();
@@ -260,7 +262,7 @@ void renderColor(){
 
 void renderGame(float delta)
 {
-    renderColor();
+    // renderColor();
     material(red,green,blue);
     P->render(delta);
     material_white();
@@ -378,38 +380,62 @@ void pauseScreen()
     glEnable(GL_LIGHTING);
 }
 
-void gameScreen(float delta)
-{
-    glBindTexture(GL_TEXTURE_2D, 0);
-    camera(cameraRadius, angleX, angleY);
-    light(light_position, light_color, 0.6, 0.4, 1);
+void starryBackground(){
     glPushMatrix();
         material_emissive_white();
         glBindTexture(GL_TEXTURE_2D, stars);
         GLUquadricObj *sphere = gluNewQuadric();
         gluQuadricTexture(sphere, GL_TRUE);
         gluQuadricNormals(sphere, GLU_SMOOTH);
-        gluSphere(sphere, 500.0, 100, 100);
+        glTranslatef(cameraLookX,cameraLookY,cameraLookZ);
+        gluSphere(sphere, 550.0, 100, 100);
         gluDeleteQuadric(sphere);
     glPopMatrix();
+}
+
+void menuBar(){
+    glPushMatrix();
+        glTranslatef(cameraLookX,cameraLookY,cameraLookZ);
+        glRotatef(angleY,0,1,0);
+        glRotatef(-angleX,1,0,0);
+        glColor3f(0,1,0.6);
+        glDisable(GL_DEPTH_TEST);
+        glDisable(GL_LIGHTING);
+        string str="Number of moves: "+to_string(P->moves)+
+        "                                                          "+
+        "                                 "
+        +"Level: "+to_string(level);
+        drawString(str.c_str(),-200,200,GLUT_BITMAP_HELVETICA_18);
+        drawString("Press P to Pause",-20,-200,GLUT_BITMAP_HELVETICA_18);
+        glEnable(GL_LIGHTING);
+        glEnable(GL_DEPTH_TEST);
+    glPopMatrix();
+}
+
+void gameScreen(float delta)
+{
+    glBindTexture(GL_TEXTURE_2D, 0);
+    camera(cameraRadius, angleX, angleY);
+    light(light_position, light_color, 0.6, 0.4, 1);
+    starryBackground();
     glPushMatrix();
     material_white();
     if (changedToGame)
     {
         changedToGame = false;
-        if(P!=nullptr){
-            string path = "./maps/l" + to_string(P->level) + ".txt";
-            createPlatformFromTextFile(path.c_str(), 40, texture);
-        } else {
-            createPlatformFromTextFile("./maps/l1.txt", 40, texture);
-        }
+        Platform->clear();
+        delete P;
+        if(level==4)
+            level=1;
+        string path = "./maps/l" + to_string(level) + ".txt";
+        createPlatformFromTextFile(path.c_str(), 40, texture);
     }
     else
     {
         renderGame(delta);
     }
+    menuBar();
     glPopMatrix();
-    // drawString("Press P to Pause", 0.0f, -250.0f, GLUT_BITMAP_HELVETICA_12);
 }
 
 void endScreen()
@@ -554,7 +580,7 @@ void mouse(int button, int state, int x, int y)
         } else if(scene == VICTORY && x >= buttonX && x <= buttonX + buttonWidth &&
                                           y >= buttonY && y <= buttonY + buttonHeight){
             continueClicked = true;
-            P->level++;
+            level++;
             scene = GAME;
             changedToGame = true;
             gameProjection();

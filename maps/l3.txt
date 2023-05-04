@@ -4,7 +4,7 @@
 -----oooo---
 ---oooooTo--
 ----ooooooo-
----ooooo-oo-
+---oooooooo-
 ---ooooooo--
 ----ooo-----
 --oooSooo---
