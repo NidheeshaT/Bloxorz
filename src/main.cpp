@@ -1,5 +1,3 @@
-#define MINIAUDIO_IMPLEMENTATION
-#include "../headers/miniaudio.h"
 #include "GLUT/glut.h"
 #include <iostream>
 #include <unordered_map>
@@ -10,8 +8,7 @@
 #include "../headers/Player.hpp"
 #define PI 3.14159265
 unsigned int prevTime = 0;
-int time = 0;
-ma_engine engine;
+
 using namespace std;
 float cameraRadius = 250;
 int angleX = 60;
@@ -56,6 +53,7 @@ void key_detect(int ch, int x, int y);
 void camera(float cameraRadius, int angleX, int angleY)
 {
     GLdouble cameraX, cameraY, cameraZ;
+
     cameraY = sin(PI * angleX / 180) * cameraRadius;
     cameraZ = cos(PI * angleX / 180) * cameraRadius;
 
@@ -329,7 +327,7 @@ void menuScreen()
     drawString(text, x, y, GLUT_BITMAP_TIMES_ROMAN_24);
 
     // Draw button
-    int buttonWidth = 200;
+    int buttonWidth = 180;
     int buttonHeight = 50;
     int buttonX = (glutGet(GLUT_WINDOW_WIDTH) - buttonWidth) / 2;
     int buttonY = y - 80;
@@ -339,11 +337,21 @@ void menuScreen()
     const char *instructions1 = "Instructions:";
     const char *instructions2 = "WASD to move camera";
     const char *instructions3 = "Arrows to move block";
-    int instructionsX = (glutGet(GLUT_WINDOW_WIDTH) - glutBitmapLength(GLUT_BITMAP_HELVETICA_12, (const unsigned char *)instructions1)) / 2.3;
+    int instructionsX = (glutGet(GLUT_WINDOW_WIDTH) - glutBitmapLength(GLUT_BITMAP_HELVETICA_12, (const unsigned char *)instructions1)) / 3;
     int instructionsY = buttonY - 50;
-    drawString(instructions1, instructionsX, instructionsY, GLUT_BITMAP_HELVETICA_12);
+    drawString(instructions1, instructionsX, instructionsY, GLUT_BITMAP_TIMES_ROMAN_24);
     drawString(instructions2, instructionsX, instructionsY - 30, GLUT_BITMAP_HELVETICA_12);
     drawString(instructions3, instructionsX, instructionsY - 60, GLUT_BITMAP_HELVETICA_12);
+
+    // Draw credits
+    const char *credits1 = "Created by:";
+    const char *credits2 = "Nidheesha T";
+    const char *credits3 = "Nagaraj Pandith";
+    int creditsX = (glutGet(GLUT_WINDOW_WIDTH) - glutBitmapLength(GLUT_BITMAP_HELVETICA_12, (const unsigned char *)credits1)) / 1.5;
+    int creditsY = buttonY - 50;
+    drawString(credits1, creditsX, creditsY, GLUT_BITMAP_TIMES_ROMAN_24);
+    drawString(credits2, creditsX, creditsY - 30, GLUT_BITMAP_HELVETICA_12);
+    drawString(credits3, creditsX, creditsY - 60, GLUT_BITMAP_HELVETICA_12);
 
     glPopMatrix();
 }
@@ -639,59 +647,9 @@ void key_detect(int ch, int x, int y)
     P->key_detect(ch, x, y);
 }
 
-void data_callback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uint32 frameCount)
-{
-    ma_decoder* pDecoder = (ma_decoder*)pDevice->pUserData;
-    if (pDecoder == NULL) {
-        return;
-    }
-
-    /* Reading PCM frames will loop based on what we specified when called ma_data_source_set_looping(). */
-    ma_data_source_read_pcm_frames(pDecoder, pOutput, frameCount, NULL);
-
-    (void)pInput;
-}
-
-    ma_device device;
-    ma_decoder decoder;
-void audio(){
-        ma_result result;
-    ma_device_config deviceConfig;
-
-
-    result = ma_decoder_init_file("./assets/gameplay.mp3", NULL, &decoder);
-    if (result != MA_SUCCESS) {
-        cout<<"File not found"<<endl;
-        return;
-    }
-
-    ma_data_source_set_looping(&decoder, MA_TRUE);
-    deviceConfig = ma_device_config_init(ma_device_type_playback);
-    deviceConfig.playback.format   = decoder.outputFormat;
-    deviceConfig.playback.channels = decoder.outputChannels;
-    deviceConfig.sampleRate        = decoder.outputSampleRate;
-    deviceConfig.dataCallback      = data_callback;
-    deviceConfig.pUserData         = &decoder;
-
-    if (ma_device_init(NULL, &deviceConfig, &device) != MA_SUCCESS) {
-        printf("Failed to open playback device.\n");
-        ma_decoder_uninit(&decoder);
-        return;
-    }
-
-    if (ma_device_start(&device) != MA_SUCCESS) {
-        printf("Failed to start playback device.\n");
-        ma_device_uninit(&device);
-        ma_decoder_uninit(&decoder);
-        return;
-    }
-}
-
-
 // 9. initializes GLUT and starts the program loop
 int main(int argc, char **argv)
 {
-
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH | GLUT_MULTISAMPLE);
     glutInitWindowSize(1000, 1000);
@@ -702,10 +660,6 @@ int main(int argc, char **argv)
     glutMouseFunc(mouse);
     glutTimerFunc(0, timer, 0);
     init();
-    audio();    
     glutMainLoop();
-
-    ma_device_uninit(&device);
-    ma_decoder_uninit(&decoder);
     return 0;
 }
