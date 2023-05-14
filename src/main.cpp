@@ -1,3 +1,5 @@
+#define MINIAUDIO_IMPLEMENTATION
+#include "../headers/miniaudio.h"
 #include "GLUT/glut.h"
 #include <iostream>
 #include <unordered_map>
@@ -8,7 +10,8 @@
 #include "../headers/Player.hpp"
 #define PI 3.14159265
 unsigned int prevTime = 0;
-
+int time = 0;
+ma_engine engine;
 using namespace std;
 float cameraRadius = 250;
 int angleX = 60;
@@ -53,7 +56,6 @@ void key_detect(int ch, int x, int y);
 void camera(float cameraRadius, int angleX, int angleY)
 {
     GLdouble cameraX, cameraY, cameraZ;
-
     cameraY = sin(PI * angleX / 180) * cameraRadius;
     cameraZ = cos(PI * angleX / 180) * cameraRadius;
 
@@ -513,6 +515,8 @@ void display()
     delta = (float)(currTime - prevTime) / 1000.0f;
     prevTime = currTime;
 
+    cout<<ma_engine_get_time(&engine)<<endl;
+
     glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
     glLoadIdentity();
     if(continueClicked){
@@ -637,9 +641,54 @@ void key_detect(int ch, int x, int y)
     P->key_detect(ch, x, y);
 }
 
+void data_callback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uint32 frameCount)
+{
+    ma_decoder* pDecoder = (ma_decoder*)pDevice->pUserData;
+    if (pDecoder == NULL) {
+        return;
+    }
+
+    /* Reading PCM frames will loop based on what we specified when called ma_data_source_set_looping(). */
+    ma_data_source_read_pcm_frames(pDecoder, pOutput, frameCount, NULL);
+
+    (void)pInput;
+}
+
+
 // 9. initializes GLUT and starts the program loop
 int main(int argc, char **argv)
 {
+    ma_result result;
+    ma_decoder decoder;
+    ma_device_config deviceConfig;
+    ma_device device;
+
+    result = ma_decoder_init_file("./assets/gameplay.mp3", NULL, &decoder);
+    if (result != MA_SUCCESS) {
+        return -2;
+    }
+
+    ma_data_source_set_looping(&decoder, MA_TRUE);
+
+    deviceConfig = ma_device_config_init(ma_device_type_playback);
+    deviceConfig.playback.format   = decoder.outputFormat;
+    deviceConfig.playback.channels = decoder.outputChannels;
+    deviceConfig.sampleRate        = decoder.outputSampleRate;
+    deviceConfig.dataCallback      = data_callback;
+    deviceConfig.pUserData         = &decoder;
+
+    if (ma_device_init(NULL, &deviceConfig, &device) != MA_SUCCESS) {
+        printf("Failed to open playback device.\n");
+        ma_decoder_uninit(&decoder);
+        return -3;
+    }
+
+    if (ma_device_start(&device) != MA_SUCCESS) {
+        printf("Failed to start playback device.\n");
+        ma_device_uninit(&device);
+        ma_decoder_uninit(&decoder);
+        return -4;
+    }
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH | GLUT_MULTISAMPLE);
     glutInitWindowSize(1000, 1000);
@@ -651,5 +700,8 @@ int main(int argc, char **argv)
     glutTimerFunc(0, timer, 0);
     init();
     glutMainLoop();
+
+    ma_device_uninit(&device);
+    ma_decoder_uninit(&decoder);
     return 0;
 }
